@@ -5,7 +5,12 @@ import api from "../services/api";
 const COLORES_ESTADO = {
   PENDIENTE: { bg: "#fff3cd", color: "#856404", label: "Pendiente" },
   EN_PREPARACION: { bg: "#cfe2ff", color: "#0a58ca", label: "En preparación" },
-  LISTO: { bg: "#d1e7dd", color: "#0a3622", label: "Listo" },
+  LISTO: { bg: "#d1e7dd", color: "#0a3622", label: "Listo para entregar" },
+  ENTREGADO: {
+    bg: "#e8e8e8",
+    color: "#444",
+    label: "Entregado — esperando cobro",
+  },
 };
 
 export default function PantallaCocina() {
@@ -13,15 +18,13 @@ export default function PantallaCocina() {
   const [conectado, setConectado] = useState(false);
 
   useEffect(() => {
-    // Cargar pedidos activos
     api.get("/pedidos").then((r) => {
-      const activos = r.data.filter((p) =>
-        ["PENDIENTE", "EN_PREPARACION", "LISTO"].includes(p.estado),
+      const activos = r.data.filter(
+        (p) => !["COBRADO", "CANCELADO"].includes(p.estado),
       );
       setPedidos(activos);
     });
 
-    // Crear conexión socket nueva directamente acá
     const socket = io("http://localhost:3001", {
       transports: ["websocket"],
       reconnection: true,
@@ -41,8 +44,12 @@ export default function PantallaCocina() {
       setPedidos((prev) =>
         prev
           .map((p) => (p.id === pedidoActualizado.id ? pedidoActualizado : p))
-          .filter((p) => !["ENTREGADO", "CANCELADO"].includes(p.estado)),
+          .filter((p) => !["COBRADO", "CANCELADO"].includes(p.estado)),
       );
+    });
+
+    socket.on("mesa_cobrada", ({ pedidoIds }) => {
+      setPedidos((prev) => prev.filter((p) => !pedidoIds.includes(p.id)));
     });
 
     socket.on("disconnect", () => {
@@ -50,8 +57,18 @@ export default function PantallaCocina() {
       setConectado(false);
     });
 
+    const intervalo = setInterval(() => {
+      api.get("/pedidos").then((r) => {
+        const activos = r.data.filter(
+          (p) => !["COBRADO", "CANCELADO"].includes(p.estado),
+        );
+        setPedidos(activos);
+      });
+    }, 30000);
+
     return () => {
       socket.disconnect();
+      clearInterval(intervalo);
     };
   }, []);
 
@@ -74,9 +91,9 @@ export default function PantallaCocina() {
 
   const labelSiguiente = (estado) => {
     const labels = {
-      PENDIENTE: "Iniciar",
+      PENDIENTE: "Iniciar preparación",
       EN_PREPARACION: "Marcar listo",
-      LISTO: "Entregar",
+      LISTO: "Entregar al mozo",
     };
     return labels[estado];
   };
