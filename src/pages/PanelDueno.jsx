@@ -1212,10 +1212,10 @@ function Stock({ tema }) {
 
 // ─── USUARIOS ─────────────────────────────────────────────────
 
-function Usuarios({ tema }) {
-  const s = getStyles(tema);
+function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [mostrando, setMostrando] = useState("lista");
+  const [usuarioEditar, setUsuarioEditar] = useState(null);
   const [form, setForm] = useState({
     nombre: "",
     email: "",
@@ -1241,58 +1241,112 @@ function Usuarios({ tema }) {
       alert(e.response?.data?.error || "Error al crear usuario");
     }
   };
+
+  const editar = async () => {
+    try {
+      const body = { nombre: form.nombre, rol: form.rol };
+      if (form.password) body.password = form.password;
+      await api.put(`/admin/usuarios/${usuarioEditar.id}`, body);
+      cargar();
+      setMostrando("lista");
+      setUsuarioEditar(null);
+    } catch (e) {
+      alert(e.response?.data?.error || "Error al editar usuario");
+    }
+  };
+
+  const abrirEditar = (u) => {
+    setForm({ nombre: u.nombre, email: u.email, password: "", rol: u.rol });
+    setUsuarioEditar(u);
+    setMostrando("editar");
+  };
+
   const toggle = async (id) => {
     await api.patch(`/admin/usuarios/${id}/toggle`);
     cargar();
   };
 
-  if (mostrando === "nuevo") {
+  if (mostrando === "nuevo" || mostrando === "editar") {
     return (
       <div style={s.seccion}>
         <div style={s.seccionHeader}>
-          <h2 style={s.seccionTitulo}>Nuevo usuario</h2>
-          <button style={s.btnSecundario} onClick={() => setMostrando("lista")}>
+          <h2 style={s.seccionTitulo}>
+            {mostrando === "editar" ? "Editar usuario" : "Nuevo usuario"}
+          </h2>
+          <button
+            style={s.btnSecundario}
+            onClick={() => {
+              setMostrando("lista");
+              setUsuarioEditar(null);
+            }}
+          >
             Cancelar
           </button>
         </div>
-        <div style={s.card}>
-          <div className="admin-form-grid" style={s.formGrid}>
-            {[
-              ["nombre", "Nombre completo", "text"],
-              ["email", "Email", "email"],
-              ["password", "Contraseña", "password"],
-            ].map(([key, label, type]) => (
-              <div key={key} style={s.formGrupo}>
-                <label style={s.formLabel}>{label}</label>
-                <input
-                  style={s.formInput}
-                  type={type}
-                  value={form[key]}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, [key]: e.target.value }))
-                  }
-                />
-              </div>
-            ))}
-            <div style={s.formGrupo}>
-              <label style={s.formLabel}>Rol</label>
-              <select
-                style={s.formInput}
-                value={form.rol}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, rol: e.target.value }))
-                }
-              >
-                <option value="EMPLEADO">Empleado</option>
-                <option value="COCINA">Cocina</option>
-                <option value="DUEÑO">Dueño</option>
-              </select>
-            </div>
+        <div className="admin-form-grid" style={s.formGrid}>
+          <div style={s.formGrupo}>
+            <label style={s.formLabel}>Nombre completo</label>
+            <input
+              style={s.formInput}
+              value={form.nombre}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, nombre: e.target.value }))
+              }
+            />
           </div>
-          <button style={s.btnPrimario} onClick={crear}>
-            Crear usuario
-          </button>
+          <div style={s.formGrupo}>
+            <label style={s.formLabel}>
+              Email {mostrando === "editar" && "(no editable)"}
+            </label>
+            <input
+              style={{
+                ...s.formInput,
+                opacity: mostrando === "editar" ? 0.5 : 1,
+              }}
+              value={form.email}
+              disabled={mostrando === "editar"}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, email: e.target.value }))
+              }
+            />
+          </div>
+          <div style={s.formGrupo}>
+            <label style={s.formLabel}>
+              {mostrando === "editar"
+                ? "Nueva contraseña (opcional)"
+                : "Contraseña"}
+            </label>
+            <input
+              style={s.formInput}
+              type="password"
+              value={form.password}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, password: e.target.value }))
+              }
+              placeholder={
+                mostrando === "editar" ? "Dejá vacío para no cambiar" : ""
+              }
+            />
+          </div>
+          <div style={s.formGrupo}>
+            <label style={s.formLabel}>Rol</label>
+            <select
+              style={s.formInput}
+              value={form.rol}
+              onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))}
+            >
+              <option value="EMPLEADO">Empleado</option>
+              <option value="COCINA">Cocina</option>
+              <option value="DUEÑO">Dueño</option>
+            </select>
+          </div>
         </div>
+        <button
+          style={s.btnPrimario}
+          onClick={mostrando === "editar" ? editar : crear}
+        >
+          {mostrando === "editar" ? "Guardar cambios" : "Crear usuario"}
+        </button>
       </div>
     );
   }
@@ -1321,16 +1375,21 @@ function Usuarios({ tema }) {
               <span
                 style={{
                   ...s.stockPill,
-                  background: u.activo ? tema.verdeBg : tema.bgLight,
-                  color: u.activo ? tema.verde : tema.textFaded,
+                  background: u.activo
+                    ? "rgba(74,138,74,0.2)"
+                    : "rgba(128,128,128,0.15)",
+                  color: u.activo ? "#90e090" : "#888",
                 }}
               >
                 {u.activo ? "Activo" : "Inactivo"}
               </span>
+              <button style={s.btnIcono} onClick={() => abrirEditar(u)}>
+                Editar
+              </button>
               <button
                 style={{
                   ...s.btnIcono,
-                  color: u.activo ? tema.alertaText : tema.verde,
+                  color: u.activo ? "#e07070" : "#90e090",
                 }}
                 onClick={() => toggle(u.id)}
               >

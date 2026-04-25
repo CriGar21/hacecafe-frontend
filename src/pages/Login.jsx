@@ -1,24 +1,20 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [verPassword, setVerPassword] = useState(false);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setCargando(true);
     setError("");
     try {
-      const usuario = await login(email, password);
-      if (usuario.rol === "COCINA") navigate("/cocina");
-      else if (usuario.rol === 'DUEÑO') navigate('/admin')
-        else navigate("/empleado");
+      await login(email, password);
     } catch {
       setError("Email o contraseña incorrectos");
     } finally {
@@ -27,85 +23,244 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.titulo}>HaceCafe</h1>
-        <p style={styles.subtitulo}>Sistema de gestión</p>
+    <div style={st.bg}>
+      <div style={st.card}>
+        {/* Logo */}
+        <div style={st.logoWrap}>
+          <span style={st.logoIcon}>☕</span>
+        </div>
+        <h1 style={st.titulo}>HaceCafe</h1>
+        <p style={st.subtitulo}>Sistema de gestión</p>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
-            required
-          />
-          {error && <p style={styles.error}>{error}</p>}
-          <button type="submit" style={styles.btn} disabled={cargando}>
+        <form onSubmit={handleLogin} style={st.form}>
+          {/* Email */}
+          <div style={st.grupo}>
+            <label style={st.label}>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="usuario@hacecafe.com"
+              style={st.input}
+              required
+              autoComplete="email"
+            />
+          </div>
+
+          {/* Password con ojo */}
+          <div style={st.grupo}>
+            <label style={st.label}>Contraseña</label>
+            <div style={st.inputWrap}>
+              <input
+                type={verPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={{ ...st.input, paddingRight: "44px" }}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                style={st.ojoBtnStyle}
+                onClick={() => setVerPassword((v) => !v)}
+                tabIndex={-1}
+              >
+                {verPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </div>
+
+          {error && <div style={st.error}>{error}</div>}
+
+          <button
+            type="submit"
+            style={{ ...st.btnLogin, opacity: cargando ? 0.7 : 1 }}
+            disabled={cargando}
+          >
             {cargando ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
+
+        {/* Selector de pantalla */}
+        <div style={st.selectorWrap}>
+          <p style={st.selectorTitulo}>Accesos directos</p>
+          <div style={st.selectorGrid}>
+            {[
+              { label: "👨‍💼 Panel Admin", path: "/admin" },
+              { label: "🧑‍🍳 Cocina", path: "/cocina" },
+              { label: "☕ Empleado", path: "/empleado" },
+              { label: "📱 Menú cliente", path: "/menu" },
+            ].map(({ label, path }) => (
+              <a key={path} href={path} style={st.selectorBtn}>
+                {label}
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-const styles = {
-  container: {
+const C = {
+  bg: "#1a1612",
+  card: "#242018",
+  light: "#2e2820",
+  gold: "#C8913A",
+  text: "#F0E6D3",
+  sub: "#9A8870",
+  border: "#3a3228",
+  error: "#e07070",
+};
+
+const st = {
+  bg: {
     minHeight: "100vh",
+    background: C.bg,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "#f5f5f5",
+    padding: "1rem",
   },
   card: {
-    background: "white",
-    padding: "2.5rem",
-    borderRadius: "16px",
+    background: C.card,
+    borderRadius: "20px",
+    padding: "2.5rem 2rem",
     width: "100%",
-    maxWidth: "380px",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+    maxWidth: "400px",
+    border: `1px solid ${C.border}`,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "0",
+  },
+  logoWrap: {
+    width: "64px",
+    height: "64px",
+    borderRadius: "50%",
+    background: `rgba(200,145,58,0.15)`,
+    border: `2px solid ${C.gold}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    margin: "0 auto 1rem",
+    fontSize: "1.8rem",
   },
   titulo: {
-    fontSize: "2rem",
-    fontWeight: "700",
+    color: C.gold,
+    fontFamily: "Georgia, serif",
+    fontWeight: "800",
+    fontSize: "1.8rem",
     textAlign: "center",
     margin: "0 0 4px",
-    color: "#1a1a1a",
   },
   subtitulo: {
+    color: C.sub,
+    fontSize: "13px",
     textAlign: "center",
-    color: "#888",
-    marginBottom: "2rem",
-    fontSize: "14px",
+    margin: "0 0 2rem",
+    letterSpacing: "1px",
   },
-  form: { display: "flex", flexDirection: "column", gap: "12px" },
-  input: {
-    padding: "12px 16px",
-    borderRadius: "10px",
-    border: "1.5px solid #e0e0e0",
-    fontSize: "15px",
-    outline: "none",
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
   },
-  btn: {
-    padding: "13px",
-    borderRadius: "10px",
-    background: "#1a1a1a",
-    color: "white",
+  grupo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  },
+  label: {
+    fontSize: "12px",
     fontWeight: "600",
+    color: C.sub,
+    letterSpacing: "0.5px",
+    textTransform: "uppercase",
+  },
+  inputWrap: {
+    position: "relative",
+  },
+  input: {
+    padding: "12px 14px",
+    borderRadius: "10px",
+    border: `1px solid ${C.border}`,
     fontSize: "15px",
+    fontFamily: "inherit",
+    background: C.light,
+    color: C.text,
+    width: "100%",
+    boxSizing: "border-box",
+    outline: "none",
+    transition: "border-color 0.2s",
+  },
+  ojoBtnStyle: {
+    position: "absolute",
+    right: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "transparent",
     border: "none",
     cursor: "pointer",
-    marginTop: "8px",
+    fontSize: "16px",
+    padding: "4px",
+    lineHeight: 1,
   },
-  error: { color: "#e53e3e", fontSize: "13px", textAlign: "center", margin: 0 },
+  error: {
+    color: C.error,
+    fontSize: "13px",
+    textAlign: "center",
+    padding: "8px 12px",
+    background: "rgba(224,112,112,0.1)",
+    borderRadius: "8px",
+    border: `1px solid rgba(224,112,112,0.2)`,
+  },
+  btnLogin: {
+    background: C.gold,
+    color: "#1a0e00",
+    border: "none",
+    borderRadius: "12px",
+    padding: "14px",
+    fontWeight: "800",
+    fontSize: "16px",
+    cursor: "pointer",
+    fontFamily: "Georgia, serif",
+    letterSpacing: "0.5px",
+    marginTop: "4px",
+    width: "100%",
+  },
+  selectorWrap: {
+    marginTop: "2rem",
+    paddingTop: "1.5rem",
+    borderTop: `1px solid ${C.border}`,
+  },
+  selectorTitulo: {
+    color: C.sub,
+    fontSize: "11px",
+    fontWeight: "700",
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
+    textAlign: "center",
+    margin: "0 0 12px",
+  },
+  selectorGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "8px",
+  },
+  selectorBtn: {
+    display: "block",
+    padding: "10px 8px",
+    borderRadius: "10px",
+    border: `1px solid ${C.border}`,
+    background: C.light,
+    color: C.text,
+    fontSize: "13px",
+    fontWeight: "600",
+    textAlign: "center",
+    textDecoration: "none",
+    transition: "all 0.2s",
+    cursor: "pointer",
+  },
 };
