@@ -17,8 +17,8 @@ export default function Login() {
     try {
       const usuario = await login(email, password);
       if (usuario.rol === "COCINA") navigate("/cocina");
-      else if (usuario.rol === "EMPLEADO" || usuario.rol === "DUEÑO")
-        navigate("/empleado");
+      else if (usuario.rol === 'DUEÑO') navigate('/admin')
+        else navigate("/empleado");
     } catch {
       setError("Email o contraseña incorrectos");
     } finally {
