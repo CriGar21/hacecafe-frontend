@@ -83,25 +83,26 @@ export default function Login() {
         </form>
 
         {/* Selector de pantalla */}
-        <div style={st.selectorWrap}>
-          <p style={st.selectorTitulo}>Accesos directos</p>
-          <div style={st.selectorGrid}>
-            {[
-              { label: "👨‍💼 Panel Admin", path: "/admin" },
-              { label: "🧑‍🍳 Cocina", path: "/cocina" },
-              { label: "☕ Empleado", path: "/empleado" },
-              { label: "📱 Menú cliente", path: "/menu" },
-            ].map(({ label, path }) => (
-              <a key={path} href={path} style={st.selectorBtn}>
-                {label}
-              </a>
-            ))}
-          </div>
-        </div>
+        {/* Selector de pantalla */}
+<div style={st.selectorWrap}>
+  <p style={st.selectorTitulo}>¿Qué pantalla vas a usar?</p>
+  <div style={st.selectorGrid}>
+    {[
+      { label: '👨‍💼 Panel Admin',  info: 'Rol: Dueño' },
+      { label: '🧑‍🍳 Cocina',       info: 'Rol: Cocina' },
+      { label: '☕ Empleado',      info: 'Rol: Empleado' },
+      { label: '📱 Menú cliente', info: 'Sin login' },
+    ].map(({ label, info, path }) => (
+      <div key={label} style={st.selectorBtn}>
+        <div style={{ fontWeight: '700', fontSize: '13px' }}>{label}</div>
+        <div style={{ fontSize: '11px', color: '#9A8870', marginTop: '2px' }}>{info}</div>
       </div>
-    </div>
-  );
-}
+    ))}
+  </div>
+  <p style={{ fontSize: '11px', color: '#9A8870', textAlign: 'center', marginTop: '10px' }}>
+    El sistema te redirige automáticamente según tu rol al ingresar
+  </p>
+</div>
 
 const C = {
   bg: "#1a1612",
