@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [verPassword, setVerPassword] = useState(false);
@@ -22,18 +24,25 @@ export default function Login() {
     }
   };
 
+  const ACCESOS = [
+    { label: "👨‍💼 Panel Admin", info: "Rol: Dueño", path: "/admin" },
+    { label: "🧑‍🍳 Cocina", info: "Rol: Cocina", path: "/cocina" },
+    { label: "☕ Empleado", info: "Rol: Empleado", path: "/empleado" },
+    { label: "📱 Menú cliente", info: "Sin login", path: "/menu" },
+  ];
+
   return (
     <div style={st.bg}>
       <div style={st.card}>
         {/* Logo */}
         <div style={st.logoWrap}>
-          <span style={st.logoIcon}>☕</span>
+          <span style={{ fontSize: "1.8rem" }}>☕</span>
         </div>
         <h1 style={st.titulo}>HaceCafe</h1>
         <p style={st.subtitulo}>Sistema de gestión</p>
 
+        {/* Formulario */}
         <form onSubmit={handleLogin} style={st.form}>
-          {/* Email */}
           <div style={st.grupo}>
             <label style={st.label}>Email</label>
             <input
@@ -47,7 +56,6 @@ export default function Login() {
             />
           </div>
 
-          {/* Password con ojo */}
           <div style={st.grupo}>
             <label style={st.label}>Contraseña</label>
             <div style={st.inputWrap}>
@@ -62,7 +70,7 @@ export default function Login() {
               />
               <button
                 type="button"
-                style={st.ojoBtnStyle}
+                style={st.ojoBtn}
                 onClick={() => setVerPassword((v) => !v)}
                 tabIndex={-1}
               >
@@ -82,28 +90,50 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Selector de pantalla */}
-        {/* Selector de pantalla */}
-<div style={st.selectorWrap}>
-  <p style={st.selectorTitulo}>¿Qué pantalla vas a usar?</p>
-  <div style={st.selectorGrid}>
-    {[
-      { label: '👨‍💼 Panel Admin',  info: 'Rol: Dueño' },
-      { label: '🧑‍🍳 Cocina',       info: 'Rol: Cocina' },
-      { label: '☕ Empleado',      info: 'Rol: Empleado' },
-      { label: '📱 Menú cliente', info: 'Sin login' },
-    ].map(({ label, info, path }) => (
-      <div key={label} style={st.selectorBtn}>
-        <div style={{ fontWeight: '700', fontSize: '13px' }}>{label}</div>
-        <div style={{ fontSize: '11px', color: '#9A8870', marginTop: '2px' }}>{info}</div>
+        {/* Accesos directos */}
+        <div style={st.selectorWrap}>
+          <p style={st.selectorTitulo}>Accesos directos</p>
+          <div style={st.selectorGrid}>
+            {ACCESOS.map(({ label, info, path }) => (
+              <button
+                key={path}
+                style={st.selectorBtn}
+                onClick={() => navigate(path)}
+                type="button"
+              >
+                <div style={{ fontWeight: "700", fontSize: "13px" }}>
+                  {label}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#9A8870",
+                    marginTop: "2px",
+                  }}
+                >
+                  {info}
+                </div>
+              </button>
+            ))}
+          </div>
+          <p
+            style={{
+              fontSize: "11px",
+              color: "#9A8870",
+              textAlign: "center",
+              marginTop: "10px",
+              margin: "10px 0 0",
+            }}
+          >
+            El sistema te redirige automáticamente según tu rol al ingresar
+          </p>
+        </div>
       </div>
-    ))}
-  </div>
-  <p style={{ fontSize: '11px', color: '#9A8870', textAlign: 'center', marginTop: '10px' }}>
-    El sistema te redirige automáticamente según tu rol al ingresar
-  </p>
-</div>
+    </div>
+  );
+}
 
+// ─── COLORES ──────────────────────────────────────────────────
 const C = {
   bg: "#1a1612",
   card: "#242018",
@@ -115,6 +145,7 @@ const C = {
   error: "#e07070",
 };
 
+// ─── ESTILOS ──────────────────────────────────────────────────
 const st = {
   bg: {
     minHeight: "100vh",
@@ -134,19 +165,17 @@ const st = {
     boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
     display: "flex",
     flexDirection: "column",
-    gap: "0",
   },
   logoWrap: {
     width: "64px",
     height: "64px",
     borderRadius: "50%",
-    background: `rgba(200,145,58,0.15)`,
+    background: "rgba(200,145,58,0.15)",
     border: `2px solid ${C.gold}`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     margin: "0 auto 1rem",
-    fontSize: "1.8rem",
   },
   titulo: {
     color: C.gold,
@@ -194,9 +223,8 @@ const st = {
     width: "100%",
     boxSizing: "border-box",
     outline: "none",
-    transition: "border-color 0.2s",
   },
-  ojoBtnStyle: {
+  ojoBtn: {
     position: "absolute",
     right: "12px",
     top: "50%",
@@ -215,7 +243,7 @@ const st = {
     padding: "8px 12px",
     background: "rgba(224,112,112,0.1)",
     borderRadius: "8px",
-    border: `1px solid rgba(224,112,112,0.2)`,
+    border: "1px solid rgba(224,112,112,0.2)",
   },
   btnLogin: {
     background: C.gold,
@@ -251,17 +279,14 @@ const st = {
     gap: "8px",
   },
   selectorBtn: {
-    display: "block",
     padding: "10px 8px",
     borderRadius: "10px",
     border: `1px solid ${C.border}`,
     background: C.light,
     color: C.text,
     fontSize: "13px",
-    fontWeight: "600",
     textAlign: "center",
-    textDecoration: "none",
-    transition: "all 0.2s",
     cursor: "pointer",
+    transition: "all 0.2s",
   },
 };
