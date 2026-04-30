@@ -35,6 +35,12 @@ const ESTADOS_COCINA = {
   },
 };
 
+// Filtro unificado: mostrar en cocina mientras no esté CANCELADO,
+// ENTREGADO ni COBRADO. Si se cobró antes de que cocina termine,
+// el pedido se queda hasta que cocina toque "Entregar al mozo".
+const filtrarCocina = (p) =>
+  !["CANCELADO", "ENTREGADO", "COBRADO"].includes(p.estado);
+
 export default function PantallaCocina() {
   const { tema } = useTema();
   const [pedidos, setPedidos] = useState([]);
@@ -47,51 +53,50 @@ export default function PantallaCocina() {
 
   useEffect(() => {
     api.get("/pedidos").then((r) => {
-      setPedidos(
-        r.data.filter(
-          (p) =>
-            !["COBRADO", "CANCELADO", "ENTREGADO"].includes(p.estado) &&
-            !p.cobrado,
-        ),
-      );
+      setPedidos(r.data.filter(filtrarCocina));
     });
 
     const socket = io(
       import.meta.env.VITE_SOCKET_URL || "http://localhost:3001",
       { transports: ["websocket"], reconnection: true },
     );
+
     socket.on("connect", () => setConectado(true));
     socket.on("disconnect", () => setConectado(false));
+
     socket.on("nuevo_pedido", (p) =>
       setPedidos((prev) =>
         prev.find((x) => x.id === p.id) ? prev : [p, ...prev],
       ),
     );
+
+    socket.on("pedido_aprobado", (p) =>
+      setPedidos((prev) =>
+        prev.find((x) => x.id === p.id) ? prev : [p, ...prev],
+      ),
+    );
+
     socket.on("pedido_actualizado", (act) => {
       setPedidos((prev) =>
-        prev
-          .map((p) => (p.id === act.id ? act : p))
-          .filter(
-            (p) =>
-              !["COBRADO", "CANCELADO", "ENTREGADO"].includes(p.estado) &&
-              !p.cobrado,
-          ),
+        prev.map((p) => (p.id === act.id ? act : p)).filter(filtrarCocina),
       );
       setPedidoDetalle((prev) => (prev?.id === act.id ? act : prev));
     });
+
+    // Al cobrar una mesa: solo sacamos los pedidos que YA terminaron
+    // (LISTO o ENTREGADO). Los que están en proceso se quedan.
     socket.on("mesa_cobrada", ({ pedidoIds }) => {
-      setPedidos((prev) => prev.filter((p) => !pedidoIds.includes(p.id)));
+      setPedidos((prev) =>
+        prev.filter((p) => {
+          if (!pedidoIds.includes(p.id)) return true;
+          return ["PENDIENTE", "EN_PREPARACION"].includes(p.estado);
+        }),
+      );
     });
 
     const intervalo = setInterval(() => {
       api.get("/pedidos").then((r) => {
-        setPedidos(
-          r.data.filter(
-            (p) =>
-              !["COBRADO", "CANCELADO", "ENTREGADO"].includes(p.estado) &&
-              !p.cobrado,
-          ),
-        );
+        setPedidos(r.data.filter(filtrarCocina));
       });
     }, 30000);
 
@@ -130,10 +135,8 @@ export default function PantallaCocina() {
     }
   };
 
-  // Bg de cada card según estado, adaptado al tema
   const getBgCard = (estado) => {
     if (tema.bg === "#F2F2F2") {
-      // tema natural — cards más claras
       const bgs = {
         PENDIENTE: "#F5EDD8",
         EN_PREPARACION: "#D8E8F5",
@@ -306,6 +309,21 @@ export default function PantallaCocina() {
                     Mesa {pedido.mesa}
                   </span>
                 )}
+                {pedido.cobrado && (
+                  <span
+                    style={{
+                      background: "rgba(200,145,58,0.2)",
+                      border: "1px solid rgba(200,145,58,0.4)",
+                      borderRadius: "6px",
+                      padding: "2px 8px",
+                      fontSize: "10px",
+                      fontWeight: "700",
+                      color: "#C8913A",
+                    }}
+                  >
+                    COBRADO
+                  </span>
+                )}
                 <span
                   style={{
                     marginLeft: "auto",
@@ -420,10 +438,7 @@ export default function PantallaCocina() {
                     style={{
                       flex: 2,
                       background: est.border,
-                      color:
-                        tema.accentText === "#1a0e00"
-                          ? "#fff"
-                          : tema.accentText,
+                      color: "#fff",
                       border: "none",
                       borderRadius: "10px",
                       padding: "10px",
@@ -498,6 +513,17 @@ export default function PantallaCocina() {
                   {new Date(pedidoDetalle.creadoEn).toLocaleTimeString(
                     "es-AR",
                     { hour: "2-digit", minute: "2-digit" },
+                  )}
+                  {pedidoDetalle.cobrado && (
+                    <span
+                      style={{
+                        marginLeft: "8px",
+                        color: "#C8913A",
+                        fontWeight: "700",
+                      }}
+                    >
+                      · YA COBRADO
+                    </span>
                   )}
                 </span>
               </div>
