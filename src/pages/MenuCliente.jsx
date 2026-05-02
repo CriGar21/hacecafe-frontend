@@ -103,7 +103,6 @@ export default function MenuCliente() {
 
   const confirmarPedido = async () => {
     if (carrito.length === 0) return;
-
     setEnviando(true);
 
     try {
@@ -121,23 +120,16 @@ export default function MenuCliente() {
       });
 
       const data = await r.json();
-
       if (!r.ok) throw new Error(data.error);
 
-      // GUARDAR PEDIDO ENVIADO
-      setPedidoEnviado({
-        ...data,
-        estadoSeguimiento: "ESPERANDO",
-      });
-
-      // LIMPIAR CARRITO
+      setPedidoEnviado({ ...data, estadoSeguimiento: "ESPERANDO" });
       setCarrito([]);
       setVerCarrito(false);
 
-      // SOCKET PARA SEGUIMIENTO
-      const socket = io("http://localhost:3001", {
-        transports: ["websocket"],
-      });
+      // Usar la variable de entorno correcta — no localhost hardcodeado
+      const SOCKET_URL =
+        import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
+      const socket = io(SOCKET_URL, { transports: ["websocket"] });
 
       socket.on("pedido_aprobado", (pedidoAprobado) => {
         if (pedidoAprobado.id === data.id) {
@@ -145,6 +137,7 @@ export default function MenuCliente() {
             ...prev,
             estadoSeguimiento: "APROBADO",
           }));
+          socket.disconnect();
         }
       });
 
@@ -154,6 +147,7 @@ export default function MenuCliente() {
             ...prev,
             estadoSeguimiento: "RECHAZADO",
           }));
+          socket.disconnect();
         }
       });
 
@@ -165,6 +159,9 @@ export default function MenuCliente() {
           }));
         }
       });
+
+      // Timeout de seguridad — si en 5 minutos no llega respuesta, desconectar
+      setTimeout(() => socket.disconnect(), 5 * 60 * 1000);
     } catch (error) {
       alert(error.message || "Error al enviar el pedido");
     } finally {
