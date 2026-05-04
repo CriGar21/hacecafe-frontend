@@ -817,6 +817,7 @@ export default function MenuCliente() {
               }}
             />
 
+            {/* Header: imagen + nombre + precio */}
             <div
               style={{
                 display: "flex",
@@ -825,17 +826,18 @@ export default function MenuCliente() {
                 marginBottom: "1rem",
               }}
             >
-              {/* Imagen pequeña */}
               <div
                 style={{
                   width: "72px",
                   height: "72px",
                   borderRadius: "10px",
                   flexShrink: 0,
-                  background: (producto) =>
-                    producto?.imagenUrl
-                      ? `url(${productoDetalle.imagenUrl}) center/cover`
-                      : C.bgLight,
+                  backgroundImage: productoDetalle.imagenUrl
+                    ? `url(${productoDetalle.imagenUrl})`
+                    : "none",
+                  backgroundColor: C.bgLight,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                   border: `1px solid ${C.border}`,
                   display: "flex",
                   alignItems: "center",
@@ -843,7 +845,7 @@ export default function MenuCliente() {
                   fontSize: "2rem",
                 }}
               >
-                {productoDetalle.categoria?.icono}
+                {!productoDetalle.imagenUrl && productoDetalle.categoria?.icono}
               </div>
               <div style={{ flex: 1 }}>
                 <h3
@@ -870,6 +872,7 @@ export default function MenuCliente() {
               </div>
             </div>
 
+            {/* Descripción */}
             {productoDetalle.descripcion && (
               <p
                 style={{
