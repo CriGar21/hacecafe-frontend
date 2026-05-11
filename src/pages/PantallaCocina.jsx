@@ -39,7 +39,7 @@ const ESTADOS_COCINA = {
 // ENTREGADO ni COBRADO. Si se cobró antes de que cocina termine,
 // el pedido se queda hasta que cocina toque "Entregar al mozo".
 const filtrarCocina = (p) =>
-  !["CANCELADO", "ENTREGADO", "COBRADO"].includes(p.estado);
+  ["PENDIENTE", "EN_PREPARACION", "LISTO"].includes(p.estado);
 
 export default function PantallaCocina() {
   const { tema } = useTema();
@@ -86,11 +86,12 @@ export default function PantallaCocina() {
     // Al cobrar una mesa: solo sacamos los pedidos que YA terminaron
     // (LISTO o ENTREGADO). Los que están en proceso se quedan.
     socket.on("mesa_cobrada", ({ pedidoIds }) => {
+      // Marcar como cobrado en el estado local pero NO sacarlo
+      // El filtrarCocina lo mantendrá porque el estado sigue siendo PENDIENTE/EN_PREPARACION/LISTO
       setPedidos((prev) =>
-        prev.filter((p) => {
-          if (!pedidoIds.includes(p.id)) return true;
-          return ["PENDIENTE", "EN_PREPARACION"].includes(p.estado);
-        }),
+        prev
+          .map((p) => (pedidoIds.includes(p.id) ? { ...p, cobrado: true } : p))
+          .filter(filtrarCocina),
       );
     });
 
