@@ -20,8 +20,6 @@ const SECCIONES = [
   { id: "config", label: "Config." },
 ];
 
-// ─── PANEL DUEÑO ──────────────────────────────────────────────
-
 export default function PanelDueno() {
   const { usuario, logout } = useAuth();
   const { tema } = useTema();
@@ -126,22 +124,38 @@ export default function PanelDueno() {
 
 function Dashboard({ tema }) {
   const s = getStyles(tema);
+  const hoy = new Date().toISOString().split("T")[0];
+
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [productos, setProductos] = useState([]);
+
+  // ── inputs locales — NO disparan búsqueda al cambiar ──
+  const [desde, setDesde] = useState(hoy);
+  const [hasta, setHasta] = useState(hoy);
   const [productoId, setProductoId] = useState("");
+
+  // ── valores que sí disparan la búsqueda (solo al apretar Buscar) ──
+  const [filtrosActivos, setFiltrosActivos] = useState({
+    desde: hoy,
+    hasta: hoy,
+    productoId: "",
+  });
 
   const cargar = useCallback(() => {
     setCargando(true);
     const params = new URLSearchParams();
-    params.append("fecha", fecha);
-    if (productoId) params.append("productoId", productoId);
+    params.append("desde", filtrosActivos.desde);
+    params.append("hasta", filtrosActivos.hasta);
+    if (filtrosActivos.productoId)
+      params.append("productoId", filtrosActivos.productoId);
     api
       .get(`/admin/dashboard?${params.toString()}`)
       .then((r) => setData(r.data))
       .finally(() => setCargando(false));
-  }, [fecha, productoId]);
+  }, [filtrosActivos]);
+
+  const buscar = () => setFiltrosActivos({ desde, hasta, productoId });
 
   useEffect(() => {
     api.get("/admin/productos").then((r) => setProductos(r.data));
@@ -151,10 +165,7 @@ function Dashboard({ tema }) {
     cargar();
     const socket = io(
       import.meta.env.VITE_SOCKET_URL || "http://localhost:3001",
-      {
-        transports: ["websocket"],
-        reconnection: true,
-      },
+      { transports: ["websocket"], reconnection: true },
     );
     socket.on("stock_bajo", (p) =>
       alert(`Stock bajo: ${p.nombre} — quedan ${p.stockActual} unidades`),
@@ -196,58 +207,93 @@ function Dashboard({ tema }) {
     "#C87070",
   ];
 
+  const labelRango =
+    filtrosActivos.desde === filtrosActivos.hasta
+      ? new Date(filtrosActivos.desde + "T12:00:00").toLocaleDateString(
+          "es-AR",
+          { day: "numeric", month: "short" },
+        )
+      : `${new Date(filtrosActivos.desde + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })} → ${new Date(filtrosActivos.hasta + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })}`;
+
   return (
     <div style={s.seccion}>
-      {/* Header filtros */}
-      <div style={s.seccionHeader}>
-        <h2 style={s.seccionTitulo}>Dashboard</h2>
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <input
-            type="date"
-            value={fecha}
-            onChange={(e) => setFecha(e.target.value)}
-            style={{
-              ...s.formInput,
-              width: "auto",
-              fontSize: "13px",
-              padding: "6px 10px",
-            }}
-          />
-          <select
-            value={productoId}
-            onChange={(e) => setProductoId(e.target.value)}
-            style={{
-              ...s.formInput,
-              width: "auto",
-              fontSize: "13px",
-              padding: "6px 10px",
-            }}
-          >
-            <option value="">Todos los productos</option>
-            {productos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-          </select>
-          <button style={s.btnRefresh} onClick={cargar}>
-            Actualizar
-          </button>
+      {/* ── Filtros ── */}
+      <div style={s.filtrosCard}>
+        <div style={s.filtrosRow}>
+          <div style={s.filtroGrupo}>
+            <label style={s.formLabel}>Desde</label>
+            <input
+              type="date"
+              value={desde}
+              onChange={(e) => setDesde(e.target.value)}
+              style={s.filtroInput}
+            />
+          </div>
+          <div style={s.filtroGrupo}>
+            <label style={s.formLabel}>Hasta</label>
+            <input
+              type="date"
+              value={hasta}
+              onChange={(e) => setHasta(e.target.value)}
+              style={s.filtroInput}
+            />
+          </div>
+          <div style={{ ...s.filtroGrupo, flex: 2 }}>
+            <label style={s.formLabel}>Producto (opcional)</label>
+            <select
+              value={productoId}
+              onChange={(e) => setProductoId(e.target.value)}
+              style={s.filtroInput}
+            >
+              <option value="">Todos los productos</option>
+              {productos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={s.filtroAcciones}>
+            <button style={s.btnBuscar} onClick={buscar}>
+              Buscar
+            </button>
+            <button style={s.btnRefresh} onClick={cargar} title="Recargar">
+              ↺
+            </button>
+          </div>
         </div>
+        {filtrosActivos.desde !== hoy || filtrosActivos.hasta !== hoy ? (
+          <div style={{ fontSize: "12px", color: tema.gold }}>
+            Mostrando: <strong>{labelRango}</strong>
+            {" · "}
+            <span
+              style={{
+                color: tema.textFaded,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+              onClick={() => {
+                setDesde(hoy);
+                setHasta(hoy);
+                setProductoId("");
+                setFiltrosActivos({ desde: hoy, hasta: hoy, productoId: "" });
+              }}
+            >
+              Volver a hoy
+            </span>
+          </div>
+        ) : (
+          <div style={{ fontSize: "12px", color: tema.textFaded }}>
+            Mostrando: <strong style={{ color: tema.gold }}>Hoy</strong>
+          </div>
+        )}
       </div>
 
       {/* KPIs */}
       <div style={s.kpiGrid}>
         {[
           {
-            label: "Ventas del día",
+            label: "Ventas del período",
             valor: `$${data.totalDia.toLocaleString()}`,
             sub: `${data.cantidadPedidos} pedidos`,
             color: tema.gold,
@@ -312,7 +358,7 @@ function Dashboard({ tema }) {
         </div>
       )}
 
-      {/* Fila 1: barras hora + barras horizontales productos */}
+      {/* Fila 1: barras hora + top productos */}
       {(data.ventasPorHora.length > 0 || data.topProductos.length > 0) && (
         <div style={s.graficosRow}>
           {data.ventasPorHora.length > 0 && (
@@ -374,12 +420,7 @@ function Dashboard({ tema }) {
             <div style={{ ...s.card, flex: "1 1 260px" }}>
               <div style={s.cardHeader}>
                 <h3 style={s.cardTitulo}>Top productos</h3>
-                <span style={s.cardSubtitulo}>
-                  {new Date(fecha + "T12:00:00").toLocaleDateString("es-AR", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </span>
+                <span style={s.cardSubtitulo}>{labelRango}</span>
               </div>
               <div
                 style={{
@@ -466,7 +507,7 @@ function Dashboard({ tema }) {
         </div>
       )}
 
-      {/* Fila 2: donut pago + stats rendimiento */}
+      {/* Fila 2: donut pago + stats */}
       {(data.porMetodoPago?.length > 0 || data.topProductos.length > 0) && (
         <div style={s.graficosRow}>
           {data.porMetodoPago?.length > 0 && (
@@ -539,7 +580,7 @@ function Dashboard({ tema }) {
           {data.topProductos.length > 0 && (
             <div style={{ ...s.card, flex: "2 1 340px" }}>
               <div style={s.cardHeader}>
-                <h3 style={s.cardTitulo}>Rendimiento del día</h3>
+                <h3 style={s.cardTitulo}>Rendimiento del período</h3>
               </div>
               <div
                 style={{
@@ -613,7 +654,6 @@ function Dashboard({ tema }) {
                   <div style={s.statSub}>sobre ventas totales</div>
                 </div>
               </div>
-
               <div
                 style={{
                   borderTop: `1px solid ${tema.separador}`,
@@ -712,7 +752,7 @@ function Dashboard({ tema }) {
       )}
 
       {data.cantidadPedidos === 0 && (
-        <div style={s.vacio}>Sin ventas para esta fecha</div>
+        <div style={s.vacio}>Sin ventas para este período</div>
       )}
     </div>
   );
@@ -1014,7 +1054,7 @@ function Productos({ tema }) {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, disponible: e.target.checked }))
                   }
-                />
+                />{" "}
                 Disponible en el menú
               </label>
             </div>
@@ -1242,7 +1282,6 @@ function Usuarios({ tema }) {
       alert(e.response?.data?.error || "Error al crear usuario");
     }
   };
-
   const editar = async () => {
     try {
       const body = { nombre: form.nombre, rol: form.rol };
@@ -1255,13 +1294,11 @@ function Usuarios({ tema }) {
       alert(e.response?.data?.error || "Error al editar usuario");
     }
   };
-
   const abrirEditar = (u) => {
     setForm({ nombre: u.nombre, email: u.email, password: "", rol: u.rol });
     setUsuarioEditar(u);
     setMostrando("editar");
   };
-
   const toggle = async (id) => {
     await api.patch(`/admin/usuarios/${id}/toggle`);
     cargar();
@@ -1412,14 +1449,11 @@ function Usuarios({ tema }) {
 
 function Caja({ tema }) {
   const s = getStyles(tema);
+  const hoy = new Date().toISOString().split("T")[0];
+
   const [data, setData] = useState(null);
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(false);
   const [productos, setProductos] = useState([]);
-  const [filtros, setFiltros] = useState({
-    desde: new Date().toISOString().split("T")[0],
-    hasta: new Date().toISOString().split("T")[0],
-    productoId: "",
-  });
   const [ticketAbierto, setTicketAbierto] = useState(null);
   const [razonSocial] = useState({
     nombre: localStorage.getItem("rs_nombre") || "HaceCafe",
@@ -1430,17 +1464,29 @@ function Caja({ tema }) {
     cuit: localStorage.getItem("rs_cuit") || "",
   });
 
+  // ── inputs locales — NO disparan búsqueda al cambiar ──
+  const [desde, setDesde] = useState(hoy);
+  const [hasta, setHasta] = useState(hoy);
+  const [productoId, setProductoId] = useState("");
+
+  // ── valores confirmados al apretar Buscar ──
+  const [filtrosActivos, setFiltrosActivos] = useState(null); // null = no buscó todavía
+
   const cargar = useCallback(() => {
+    if (!filtrosActivos) return;
     setCargando(true);
     const p = new URLSearchParams();
-    if (filtros.desde) p.append("desde", filtros.desde);
-    if (filtros.hasta) p.append("hasta", filtros.hasta);
-    if (filtros.productoId) p.append("productoId", filtros.productoId);
+    p.append("desde", filtrosActivos.desde);
+    p.append("hasta", filtrosActivos.hasta);
+    if (filtrosActivos.productoId)
+      p.append("productoId", filtrosActivos.productoId);
     api
       .get(`/admin/caja?${p.toString()}`)
       .then((r) => setData(r.data))
       .finally(() => setCargando(false));
-  }, [filtros]);
+  }, [filtrosActivos]);
+
+  const buscar = () => setFiltrosActivos({ desde, hasta, productoId });
 
   useEffect(() => {
     api.get("/admin/productos").then((r) => setProductos(r.data));
@@ -1509,61 +1555,56 @@ function Caja({ tema }) {
       );
       XLSX.writeFile(
         wb,
-        `hacecafe_caja_${filtros.desde}_${filtros.hasta}.xlsx`,
+        `hacecafe_caja_${filtrosActivos.desde}_${filtrosActivos.hasta}.xlsx`,
       );
     });
   };
-
-  if (cargando) return <div style={s.cargando}>Cargando caja...</div>;
 
   return (
     <div style={s.seccion}>
       <div style={s.seccionHeader}>
         <h2 style={s.seccionTitulo}>Caja</h2>
         <div style={{ display: "flex", gap: "8px" }}>
-          <button style={s.btnRefresh} onClick={cargar}>
-            Actualizar
-          </button>
-          {data?.pedidos.length > 0 && (
+          {data && (
+            <button style={s.btnRefresh} onClick={cargar}>
+              ↺ Actualizar
+            </button>
+          )}
+          {data?.pedidos?.length > 0 && (
             <button style={s.btnPrimario} onClick={exportarExcel}>
               Exportar Excel
             </button>
           )}
         </div>
       </div>
-      <div style={s.card}>
-        <h3 style={s.cardTitulo}>Filtros</h3>
-        <div className="admin-form-grid" style={{ ...s.formGrid, gap: "10px" }}>
-          <div style={s.formGrupo}>
+
+      {/* ── Filtros ── */}
+      <div style={s.filtrosCard}>
+        <div style={s.filtrosRow}>
+          <div style={s.filtroGrupo}>
             <label style={s.formLabel}>Desde</label>
             <input
               type="date"
-              style={s.formInput}
-              value={filtros.desde}
-              onChange={(e) =>
-                setFiltros((f) => ({ ...f, desde: e.target.value }))
-              }
+              value={desde}
+              onChange={(e) => setDesde(e.target.value)}
+              style={s.filtroInput}
             />
           </div>
-          <div style={s.formGrupo}>
+          <div style={s.filtroGrupo}>
             <label style={s.formLabel}>Hasta</label>
             <input
               type="date"
-              style={s.formInput}
-              value={filtros.hasta}
-              onChange={(e) =>
-                setFiltros((f) => ({ ...f, hasta: e.target.value }))
-              }
+              value={hasta}
+              onChange={(e) => setHasta(e.target.value)}
+              style={s.filtroInput}
             />
           </div>
-          <div style={{ ...s.formGrupo, gridColumn: "1/-1" }}>
+          <div style={{ ...s.filtroGrupo, flex: 2 }}>
             <label style={s.formLabel}>Producto (opcional)</label>
             <select
-              style={s.formInput}
-              value={filtros.productoId}
-              onChange={(e) =>
-                setFiltros((f) => ({ ...f, productoId: e.target.value }))
-              }
+              value={productoId}
+              onChange={(e) => setProductoId(e.target.value)}
+              style={s.filtroInput}
             >
               <option value="">Todos</option>
               {productos.map((p) => (
@@ -1573,18 +1614,41 @@ function Caja({ tema }) {
               ))}
             </select>
           </div>
+          <div style={s.filtroAcciones}>
+            <button style={s.btnBuscar} onClick={buscar}>
+              Buscar
+            </button>
+          </div>
         </div>
+        {filtrosActivos && (
+          <div style={{ fontSize: "12px", color: tema.textFaded }}>
+            Período:{" "}
+            <strong style={{ color: tema.gold }}>
+              {filtrosActivos.desde === filtrosActivos.hasta
+                ? filtrosActivos.desde
+                : `${filtrosActivos.desde} → ${filtrosActivos.hasta}`}
+            </strong>
+          </div>
+        )}
+        {!filtrosActivos && (
+          <div style={{ fontSize: "12px", color: tema.textFaded }}>
+            Seleccioná un rango y apretá Buscar para ver los datos.
+          </div>
+        )}
       </div>
-      {data && (
+
+      {cargando && <div style={s.cargando}>Cargando caja...</div>}
+
+      {data && !cargando && (
         <>
           <div style={s.kpiGrid}>
             <div style={{ ...s.kpiCard, borderTop: `3px solid ${tema.gold}` }}>
               <div style={s.kpiLabel}>Total del período</div>
               <div style={s.kpiValor}>${data.total.toLocaleString()}</div>
               <div style={s.kpiSub}>
-                {filtros.desde === filtros.hasta
-                  ? "hoy"
-                  : `${filtros.desde} → ${filtros.hasta}`}
+                {filtrosActivos.desde === filtrosActivos.hasta
+                  ? "1 día"
+                  : `${filtrosActivos.desde} → ${filtrosActivos.hasta}`}
               </div>
             </div>
             <div
@@ -1607,6 +1671,7 @@ function Caja({ tema }) {
               <div style={s.kpiSub}>por pedido</div>
             </div>
           </div>
+
           {data.porMetodoPago?.length > 0 && (
             <div style={s.card}>
               <h3 style={s.cardTitulo}>Por método de pago</h3>
@@ -1630,7 +1695,8 @@ function Caja({ tema }) {
               ))}
             </div>
           )}
-          {data.porVendedor.length > 0 && (
+
+          {data.porVendedor?.length > 0 && (
             <div style={s.card}>
               <h3 style={s.cardTitulo}>Ventas por empleado</h3>
               {data.porVendedor
@@ -1650,6 +1716,7 @@ function Caja({ tema }) {
                 ))}
             </div>
           )}
+
           {data.pedidos.length === 0 ? (
             <div style={s.vacio}>Sin ventas para este período</div>
           ) : (
@@ -1795,7 +1862,6 @@ function Categorias({ tema }) {
     await api.patch(`/admin/categorias/${cat.id}`, { activa: !cat.activa });
     cargar();
   };
-
   const moverOrden = async (cat, dir) => {
     const ord = [...categorias].sort(
       (a, b) => (a.ordenDisplay ?? 999) - (b.ordenDisplay ?? 999),
@@ -1820,7 +1886,6 @@ function Categorias({ tema }) {
     await api.patch(`/admin/categorias/${cat.id}`, { ordenDisplay: oB });
     await api.patch(`/admin/categorias/${dest.id}`, { ordenDisplay: oA });
   };
-
   const crearNueva = async () => {
     if (!nueva.nombre.trim()) return;
     await api.post("/admin/categorias", nueva);
@@ -2013,8 +2078,6 @@ function Categorias({ tema }) {
 
 function QRMesas({ tema }) {
   const s = getStyles(tema);
-
-  // Persiste en localStorage igual que Config.
   const [cantidadMesas, setCantidadMesas] = useState(() =>
     parseInt(localStorage.getItem("rs_mesas") || "7"),
   );
@@ -2026,7 +2089,6 @@ function QRMesas({ tema }) {
     setCantidadMesas(val);
     localStorage.setItem("rs_mesas", String(val));
   };
-
   const mesas = Array.from({ length: cantidadMesas }, (_, i) => i + 1);
 
   const descargarSVG = (nMesa) => {
@@ -2045,46 +2107,17 @@ function QRMesas({ tema }) {
 
   const imprimirUna = (nMesa) => {
     const w = window.open("", "_blank");
-    w.document
-      .write(`<html><head><title>QR Mesa ${nMesa} — ${nombreLocal}</title>
-    <style>body{font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff}
-    .card{border:3px solid #333;border-radius:16px;padding:32px;text-align:center;width:280px}
-    .local{font-size:12px;color:#888;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px}
-    .mesa{font-size:32px;font-weight:900;color:#1a1a1a;margin-bottom:10px}
-    .sep{width:50px;height:2px;background:#C8913A;margin:0 auto 16px}
-    .inst{font-size:12px;color:#888;margin-top:14px}
-    @media print{@page{margin:5mm}}</style></head>
-    <body><div class="card">
-      <div class="local">${nombreLocal}</div>
-      <div class="mesa">Mesa ${nMesa}</div>
-      <div class="sep"></div><div id="qr"></div>
-      <div class="inst">Escaneá para hacer tu pedido</div>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>new QRCode(document.getElementById('qr'),{text:'${dominio}/menu?mesa=${nMesa}',width:200,height:200,colorDark:'#1a1a1a',colorLight:'#fff'});
-    setTimeout(()=>window.print(),600)</script></body></html>`);
+    w.document.write(
+      `<html><head><title>QR Mesa ${nMesa} — ${nombreLocal}</title><style>body{font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff}.card{border:3px solid #333;border-radius:16px;padding:32px;text-align:center;width:280px}.local{font-size:12px;color:#888;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px}.mesa{font-size:32px;font-weight:900;color:#1a1a1a;margin-bottom:10px}.sep{width:50px;height:2px;background:#C8913A;margin:0 auto 16px}.inst{font-size:12px;color:#888;margin-top:14px}@media print{@page{margin:5mm}}</style></head><body><div class="card"><div class="local">${nombreLocal}</div><div class="mesa">Mesa ${nMesa}</div><div class="sep"></div><div id="qr"></div><div class="inst">Escaneá para hacer tu pedido</div></div><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><script>new QRCode(document.getElementById('qr'),{text:'${dominio}/menu?mesa=${nMesa}',width:200,height:200,colorDark:'#1a1a1a',colorLight:'#fff'});setTimeout(()=>window.print(),600)</script></body></html>`,
+    );
     w.document.close();
   };
 
   const imprimirTodos = () => {
     const w = window.open("", "_blank");
-    w.document.write(`<html><head><title>QR Mesas — ${nombreLocal}</title>
-    <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;background:#fff}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px}
-    .qr-card{border:2px solid #333;border-radius:12px;padding:20px;text-align:center;break-inside:avoid}
-    .local{font-size:13px;color:#666;margin-bottom:8px;letter-spacing:2px;text-transform:uppercase}
-    .mesa{font-size:28px;font-weight:800;margin-bottom:12px;color:#1a1a1a}
-    .sep{width:40px;height:2px;background:#C8913A;margin:8px auto}
-    .inst{font-size:11px;color:#888;margin-top:10px}
-    @media print{@page{margin:10mm}}</style></head>
-    <body><div class="grid">
-      ${mesas.map((n) => `<div class="qr-card"><div class="local">${nombreLocal}</div><div class="mesa">Mesa ${n}</div><div class="sep"></div><div id="qr-${n}"></div><div class="inst">Escaneá para hacer tu pedido</div></div>`).join("")}
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>
-      ${mesas.map((n) => `new QRCode(document.getElementById('qr-${n}'),{text:'${dominio}/menu?mesa=${n}',width:160,height:160,colorDark:'#1a1a1a',colorLight:'#fff'});`).join("")}
-      setTimeout(()=>window.print(),900)
-    </script></body></html>`);
+    w.document.write(
+      `<html><head><title>QR Mesas — ${nombreLocal}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;background:#fff}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:20px}.qr-card{border:2px solid #333;border-radius:12px;padding:20px;text-align:center;break-inside:avoid}.local{font-size:13px;color:#666;margin-bottom:8px;letter-spacing:2px;text-transform:uppercase}.mesa{font-size:28px;font-weight:800;margin-bottom:12px;color:#1a1a1a}.sep{width:40px;height:2px;background:#C8913A;margin:8px auto}.inst{font-size:11px;color:#888;margin-top:10px}@media print{@page{margin:10mm}}</style></head><body><div class="grid">${mesas.map((n) => `<div class="qr-card"><div class="local">${nombreLocal}</div><div class="mesa">Mesa ${n}</div><div class="sep"></div><div id="qr-${n}"></div><div class="inst">Escaneá para hacer tu pedido</div></div>`).join("")}</div><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><script>${mesas.map((n) => `new QRCode(document.getElementById('qr-${n}'),{text:'${dominio}/menu?mesa=${n}',width:160,height:160,colorDark:'#1a1a1a',colorLight:'#fff'});`).join("")}setTimeout(()=>window.print(),900)</script></body></html>`,
+    );
     w.document.close();
   };
 
@@ -2096,8 +2129,6 @@ function QRMesas({ tema }) {
           🖨 Imprimir todos
         </button>
       </div>
-
-      {/* Panel cantidad mesas */}
       <div style={s.card}>
         <h3 style={s.cardTitulo}>Cantidad de mesas</h3>
         <div
@@ -2108,7 +2139,6 @@ function QRMesas({ tema }) {
             flexWrap: "wrap",
           }}
         >
-          {/* Botones +/- */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <button
               style={s.btnContador}
@@ -2140,7 +2170,6 @@ function QRMesas({ tema }) {
               +
             </button>
           </div>
-          {/* Input directo */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "12px", color: tema.textFaded }}>
               o ingresá el número:
@@ -2171,8 +2200,6 @@ function QRMesas({ tema }) {
           <strong>Config. → Dominio del sistema</strong> antes de imprimir.
         </div>
       </div>
-
-      {/* Grilla de QRs */}
       <div
         style={{
           display: "grid",
@@ -2219,8 +2246,6 @@ function QRMesas({ tema }) {
                 borderRadius: "2px",
               }}
             />
-
-            {/* QR SVG en blanco */}
             <div
               style={{
                 background: "#fff",
@@ -2241,11 +2266,9 @@ function QRMesas({ tema }) {
                 includeMargin={false}
               />
             </div>
-
             <div style={{ fontSize: "11px", color: tema.textFaded }}>
               Escaneá para pedir
             </div>
-
             <div style={{ display: "flex", gap: "8px", width: "100%" }}>
               <button
                 style={{
@@ -2273,8 +2296,6 @@ function QRMesas({ tema }) {
           </div>
         ))}
       </div>
-
-      {/* Instrucciones */}
       <div style={s.card}>
         <h3 style={s.cardTitulo}>Cómo usar</h3>
         <div
@@ -2353,7 +2374,6 @@ function Configuracion({ tema }) {
       <div style={s.seccionHeader}>
         <h2 style={s.seccionTitulo}>Configuración del negocio</h2>
       </div>
-
       <div style={s.card}>
         <h3 style={s.cardTitulo}>Datos del local y tickets</h3>
         <div className="admin-form-grid" style={s.formGrid}>
@@ -2373,15 +2393,13 @@ function Configuracion({ tema }) {
         <div style={{ fontSize: "11px", color: tema.textFaded }}>
           El dominio se usa para generar los QR de mesa. En desarrollo es{" "}
           <code style={{ color: tema.gold }}>{window.location.origin}</code>.
-          Cambialo al hacer el deploy (ej: https://mi-cafeteria.com).
+          Cambialo al hacer el deploy.
         </div>
       </div>
-
       <div style={s.card}>
         <h3 style={s.cardTitulo}>Mercado Pago</h3>
         <p style={{ fontSize: "12px", color: tema.textFaded, margin: 0 }}>
-          El QR se genera automáticamente desde la URL de tu QR de MP. Lo
-          encontrás en la app → Cobrar → compartir QR.
+          El QR se genera automáticamente desde la URL de tu QR de MP.
         </p>
         <div className="admin-form-grid" style={s.formGrid}>
           <Campo campo="mp_alias" label="Alias de MP" />
@@ -2390,7 +2408,6 @@ function Configuracion({ tema }) {
           <Campo campo="mp_qr_url" label="URL del QR de MP (opcional)" />
         </div>
       </div>
-
       <div style={s.card}>
         <h3 style={s.cardTitulo}>Transferencia bancaria</h3>
         <div className="admin-form-grid" style={s.formGrid}>
@@ -2400,7 +2417,6 @@ function Configuracion({ tema }) {
           <Campo campo="transfer_banco" label="Banco" />
         </div>
       </div>
-
       <button style={{ ...s.btnPrimario, marginTop: "4px" }} onClick={guardar}>
         {guardado ? "✓ Guardado" : "Guardar configuración"}
       </button>
@@ -2454,7 +2470,6 @@ function getStyles(t) {
       cursor: "pointer",
       fontSize: "12px",
     },
-
     layout: { display: "flex", flex: 1, overflow: "hidden", minHeight: 0 },
     sidebar: {
       width: "175px",
@@ -2483,8 +2498,6 @@ function getStyles(t) {
       background: `${t.gold}18`,
       borderLeft: `3px solid ${t.gold}`,
     },
-
-    // Contenido full-width sin maxWidth
     contenido: { flex: 1, overflowY: "auto", padding: "1.5rem", minWidth: 0 },
     seccion: {
       display: "flex",
@@ -2507,7 +2520,58 @@ function getStyles(t) {
       fontFamily: "Georgia, serif",
     },
 
-    // KPIs adaptivos
+    // ── Filtros amigables ──
+    filtrosCard: {
+      background: t.bgCard,
+      borderRadius: "14px",
+      padding: "1rem 1.2rem",
+      border: `1px solid ${t.borderFaded}`,
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px",
+    },
+    filtrosRow: {
+      display: "flex",
+      gap: "10px",
+      alignItems: "flex-end",
+      flexWrap: "wrap",
+    },
+    filtroGrupo: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "4px",
+      flex: 1,
+      minWidth: "120px",
+    },
+    filtroInput: {
+      padding: "9px 12px",
+      borderRadius: "8px",
+      border: `1px solid ${t.borderFaded}`,
+      fontSize: "14px",
+      fontFamily: "inherit",
+      background: t.inputBg,
+      color: t.text,
+      width: "100%",
+      boxSizing: "border-box",
+    },
+    filtroAcciones: {
+      display: "flex",
+      gap: "8px",
+      alignItems: "flex-end",
+      flexShrink: 0,
+    },
+    btnBuscar: {
+      background: t.accent,
+      color: t.accentText,
+      border: "none",
+      borderRadius: "8px",
+      padding: "9px 20px",
+      fontWeight: "800",
+      fontSize: "14px",
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    },
+
     kpiGrid: {
       display: "grid",
       gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
@@ -2534,8 +2598,6 @@ function getStyles(t) {
       lineHeight: 1,
     },
     kpiSub: { fontSize: "12px", color: t.textFaded, marginTop: "6px" },
-
-    // Alertas
     alertaBox: {
       background: t.alertaBg,
       border: `1px solid ${t.alertaBorder}`,
@@ -2554,16 +2616,12 @@ function getStyles(t) {
       fontSize: "13px",
       color: t.alertaText,
     },
-
-    // Filas de gráficos (flex wrapping)
     graficosRow: {
       display: "flex",
       gap: "14px",
       flexWrap: "wrap",
       alignItems: "flex-start",
     },
-
-    // Cards
     card: {
       background: t.bgCard,
       borderRadius: "14px",
@@ -2585,8 +2643,6 @@ function getStyles(t) {
       color: t.gold,
     },
     cardSubtitulo: { fontSize: "12px", color: t.textFaded },
-
-    // Gráfico barras
     barChart: {
       display: "flex",
       alignItems: "flex-end",
@@ -2622,8 +2678,6 @@ function getStyles(t) {
       transition: "height 0.5s ease",
     },
     barLabelBot: { fontSize: "10px", marginTop: "4px" },
-
-    // Stats boxes
     statBox: {
       background: `${t.gold}10`,
       border: `1px solid ${t.borderFaded}`,
@@ -2643,7 +2697,6 @@ function getStyles(t) {
       whiteSpace: "nowrap",
     },
     statSub: { fontSize: "11px", color: t.textFaded },
-
     rankRow: {
       display: "flex",
       alignItems: "center",
@@ -2660,7 +2713,6 @@ function getStyles(t) {
     rankNombre: { flex: 1, fontWeight: "600", color: t.text },
     rankCantidad: { color: t.textFaded, fontSize: "13px" },
     rankTotal: { fontWeight: "700", color: t.gold },
-
     vacio: {
       textAlign: "center",
       color: t.textFaded,
@@ -2668,7 +2720,6 @@ function getStyles(t) {
       fontSize: "14px",
     },
     cargando: { textAlign: "center", color: t.textFaded, padding: "3rem" },
-
     btnRefresh: {
       background: `${t.gold}18`,
       border: `1px solid ${t.borderFaded}`,
@@ -2707,7 +2758,6 @@ function getStyles(t) {
       color: t.gold,
       padding: "4px 8px",
     },
-    // Botón contador circular para +/-
     btnContador: {
       width: "36px",
       height: "36px",
@@ -2723,7 +2773,6 @@ function getStyles(t) {
       justifyContent: "center",
       flexShrink: 0,
     },
-
     listaAdmin: { display: "flex", flexDirection: "column", gap: "8px" },
     listaItem: {
       background: t.bgCard,
@@ -2757,7 +2806,6 @@ function getStyles(t) {
       fontSize: "12px",
       fontWeight: "700",
     },
-
     formGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" },
     formGrupo: { display: "flex", flexDirection: "column", gap: "4px" },
     formLabel: {
@@ -2785,7 +2833,6 @@ function getStyles(t) {
       cursor: "pointer",
       color: t.text,
     },
-
     stockRow: {
       display: "flex",
       alignItems: "center",
@@ -2818,7 +2865,6 @@ function getStyles(t) {
       background: t.inputBg,
       color: t.text,
     },
-
     cajaRow: {
       display: "flex",
       alignItems: "center",
