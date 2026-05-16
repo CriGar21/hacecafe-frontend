@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import MenuCliente from "./pages/MenuCliente";
 import PantallaEmpleado from "./pages/PantallaEmpleado";
@@ -19,38 +19,36 @@ const RutaProtegida = ({ children, roles }) => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/menu" element={<MenuCliente />} />
-          <Route
-            path="/empleado"
-            element={
-              <RutaProtegida roles={["EMPLEADO", "DUEÑO"]}>
-                <PantallaEmpleado />
-              </RutaProtegida>
-            }
-          />
-          <Route
-            path="/cocina"
-            element={
-              <RutaProtegida roles={["COCINA", "DUEÑO", "EMPLEADO"]}>
-                <PantallaCocina />
-              </RutaProtegida>
-            }
-          />
-          <Route
-            path="/admin/*"
-            element={
-              <RutaProtegida roles={["DUEÑO"]}>
-                <PanelDueno />
-              </RutaProtegida>
-            }
-          />
-          <Route path="/" element={<Navigate to="/login" />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/menu" element={<MenuCliente />} />
+        <Route
+          path="/empleado"
+          element={
+            <RutaProtegida roles={["EMPLEADO", "DUEÑO"]}>
+              <PantallaEmpleado />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/cocina"
+          element={
+            <RutaProtegida roles={["COCINA", "DUEÑO", "EMPLEADO"]}>
+              <PantallaCocina />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/admin/*"
+          element={
+            <RutaProtegida roles={["DUEÑO"]}>
+              <PanelDueno />
+            </RutaProtegida>
+          }
+        />
+        <Route path="/" element={<Navigate to="/login" />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

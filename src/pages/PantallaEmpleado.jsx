@@ -57,6 +57,23 @@ export default function PantallaEmpleado() {
   const [pantallaPago, setPantallaPago] = useState(null);
   const [ticketCobro, setTicketCobro] = useState(null);
 
+  // ── HISTORIAL DE TICKETS ───────────────────────────────
+  const [fechaHistorial, setFechaHistorial] = useState(
+    () => new Date().toISOString().split("T")[0],
+  );
+  const [ticketsDelDia, setTicketsDelDia] = useState([]);
+  const [buscandoHistorial, setBuscandoHistorial] = useState(false);
+  const [ticketHistorial, setTicketHistorial] = useState(null);
+  const [historialCargado, setHistorialCargado] = useState(false);
+  // ───────────────────────────────────────────────────────
+
+  // ── STOCK ──────────────────────────────────────────────
+  const [verStock, setVerStock] = useState(false);
+  const [stockProductos, setStockProductos] = useState([]);
+  const [cantStock, setCantStock] = useState({});
+  const [guardandoStock, setGuardandoStock] = useState({});
+  // ───────────────────────────────────────────────────────
+
   const razonSocial = {
     nombre: localStorage.getItem("rs_nombre") || "HaceCafe",
     subtitulo:
@@ -247,6 +264,49 @@ export default function PantallaEmpleado() {
     }
   };
 
+  // ── FUNCIONES DE STOCK ─────────────────────────────────
+  const cargarStock = () =>
+    api.get("/admin/productos").then((r) => setStockProductos(r.data));
+
+  const agregarStock = async (producto) => {
+    const cantidad = Number(cantStock[producto.id]);
+    if (!cantidad || cantidad <= 0) return;
+    setGuardandoStock((prev) => ({ ...prev, [producto.id]: true }));
+    try {
+      await api.patch(`/admin/productos/${producto.id}/stock`, {
+        cantidad,
+        operacion: "agregar",
+      });
+      setCantStock((prev) => ({ ...prev, [producto.id]: "" }));
+      cargarStock();
+    } catch {
+      alert("Error al actualizar stock");
+    } finally {
+      setGuardandoStock((prev) => ({ ...prev, [producto.id]: false }));
+    }
+  };
+  // ───────────────────────────────────────────────────────
+
+  // ── BÚSQUEDA HISTORIAL POR FECHA ───────────────────────
+  const buscarTicketsPorFecha = async () => {
+    if (!fechaHistorial) return;
+    setBuscandoHistorial(true);
+    setTicketsDelDia([]);
+    setHistorialCargado(false);
+    try {
+      const { data } = await api.get(
+        `/admin/caja?desde=${fechaHistorial}&hasta=${fechaHistorial}`,
+      );
+      setTicketsDelDia(data.pedidos || []);
+      setHistorialCargado(true);
+    } catch {
+      alert("Error al buscar tickets");
+    } finally {
+      setBuscandoHistorial(false);
+    }
+  };
+  // ───────────────────────────────────────────────────────
+
   const totalActivos = misPedidos.length;
 
   return (
@@ -261,6 +321,25 @@ export default function PantallaEmpleado() {
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           <SelectorTema />
+          {/* Botón Stock */}
+          <button
+            style={{
+              background: "transparent",
+              border: `1px solid rgba(255,255,255,0.3)`,
+              color: "rgba(255,255,255,0.8)",
+              borderRadius: "8px",
+              padding: "6px 14px",
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: "600",
+            }}
+            onClick={() => {
+              setVerStock(true);
+              cargarStock();
+            }}
+          >
+            Stock
+          </button>
           {usuario?.rol === "DUEÑO" && (
             <a
               href="/admin"
@@ -981,6 +1060,283 @@ export default function PantallaEmpleado() {
               {pedidosCobro.length === 0 && busquedaCobro && (
                 <p style={st.vacio}>No se encontraron pedidos activos</p>
               )}
+
+              {/* ── Separador historial ── */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  margin: "8px 0 4px",
+                }}
+              >
+                <div
+                  style={{ flex: 1, height: "1px", background: tema.separador }}
+                />
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: tema.textFaded,
+                    fontWeight: "700",
+                    letterSpacing: "1px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  REIMPRIMIR TICKET
+                </span>
+                <div
+                  style={{ flex: 1, height: "1px", background: tema.separador }}
+                />
+              </div>
+
+              {/* ── Buscador por fecha ── */}
+              <div
+                style={{
+                  background: tema.bgCard,
+                  borderRadius: "14px",
+                  padding: "1rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  border: `1px solid ${tema.borderFaded}`,
+                }}
+              >
+                <p
+                  style={{ margin: 0, fontSize: "12px", color: tema.textFaded }}
+                >
+                  Buscá los tickets cobrados de un día para reimprimirlos.
+                </p>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <input
+                    type="date"
+                    value={fechaHistorial}
+                    onChange={(e) => {
+                      setFechaHistorial(e.target.value);
+                      setTicketsDelDia([]);
+                      setHistorialCargado(false);
+                    }}
+                    style={{ ...st.inputMesa, flex: 1 }}
+                  />
+                  <button
+                    style={{
+                      ...st.btnSecundario,
+                      opacity: buscandoHistorial ? 0.6 : 1,
+                      whiteSpace: "nowrap",
+                    }}
+                    onClick={buscarTicketsPorFecha}
+                    disabled={buscandoHistorial}
+                  >
+                    {buscandoHistorial ? "..." : "Ver tickets"}
+                  </button>
+                </div>
+
+                {/* Total del día */}
+                {historialCargado && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      background: `${tema.gold}12`,
+                      borderRadius: "10px",
+                      padding: "10px 14px",
+                      border: `1px solid ${tema.borderFaded}`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "2px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: tema.textFaded,
+                          fontWeight: "700",
+                          letterSpacing: "0.5px",
+                        }}
+                      >
+                        TOTAL DEL DÍA
+                      </span>
+                      <span style={{ fontSize: "11px", color: tema.textFaded }}>
+                        {ticketsDelDia.length} ticket
+                        {ticketsDelDia.length !== 1 ? "s" : ""} cobrado
+                        {ticketsDelDia.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "1.4rem",
+                        fontWeight: "900",
+                        color: tema.gold,
+                        fontFamily: "Georgia, serif",
+                      }}
+                    >
+                      $
+                      {ticketsDelDia
+                        .reduce((acc, p) => acc + Number(p.total), 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Lista de tickets */}
+                {historialCargado && ticketsDelDia.length === 0 && (
+                  <p style={{ ...st.vacio, padding: "1rem 0" }}>
+                    Sin tickets cobrados para esta fecha
+                  </p>
+                )}
+
+                {ticketsDelDia.map((pedido) => (
+                  <div
+                    key={pedido.id}
+                    style={{
+                      background: tema.bg,
+                      borderRadius: "10px",
+                      padding: "10px 12px",
+                      border: `1px solid ${tema.borderFaded}`,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: "800",
+                            color: tema.gold,
+                            fontFamily: "Georgia, serif",
+                            fontSize: "1.1rem",
+                          }}
+                        >
+                          #{pedido.numero}
+                        </span>
+                        {pedido.mesa && (
+                          <span
+                            style={{
+                              background: tema.btnActivo,
+                              border: `1px solid ${tema.borderFaded}`,
+                              borderRadius: "6px",
+                              padding: "2px 8px",
+                              fontSize: "11px",
+                              fontWeight: "700",
+                              color: tema.gold,
+                            }}
+                          >
+                            Mesa {pedido.mesa}
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <span
+                          style={{ fontSize: "11px", color: tema.textFaded }}
+                        >
+                          {new Date(
+                            pedido.actualizadoEn || pedido.creadoEn,
+                          ).toLocaleTimeString("es-AR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: "800",
+                            color: tema.gold,
+                          }}
+                        >
+                          ${Number(pedido.total).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "2px",
+                      }}
+                    >
+                      {pedido.items?.map((item, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: "12px",
+                            color: tema.textFaded,
+                          }}
+                        >
+                          <span>
+                            {item.cantidad}x {item.producto?.nombre}
+                          </span>
+                          <span>${Number(item.subtotal).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span style={{ fontSize: "11px", color: tema.textFaded }}>
+                        {pedido.metodoPago || "EFECTIVO"}
+                        {pedido.usuario?.nombre
+                          ? ` · ${pedido.usuario.nombre}`
+                          : ""}
+                      </span>
+                      <button
+                        style={{
+                          background: "transparent",
+                          border: `1px solid ${tema.borderFaded}`,
+                          borderRadius: "8px",
+                          padding: "5px 12px",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          color: tema.gold,
+                          cursor: "pointer",
+                        }}
+                        onClick={() =>
+                          setTicketCobro({
+                            numero: pedido.numero,
+                            mesa: pedido.mesa || "",
+                            creadoEn: pedido.actualizadoEn || pedido.creadoEn,
+                            total: pedido.total,
+                            metodoPago: pedido.metodoPago || "EFECTIVO",
+                            items: pedido.items || [],
+                          })
+                        }
+                      >
+                        🖨 Reimprimir
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -1001,6 +1357,170 @@ export default function PantallaEmpleado() {
           razonSocial={razonSocial}
           onCerrar={() => setTicketCobro(null)}
         />
+      )}
+
+      {/* Modal Stock */}
+      {verStock && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.85)",
+            zIndex: 400,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+          }}
+          onClick={() => setVerStock(false)}
+        >
+          <div
+            style={{
+              background: tema.bgCard,
+              border: `2px solid ${tema.borderFaded}`,
+              borderRadius: "20px",
+              padding: "1.5rem",
+              width: "100%",
+              maxWidth: "480px",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <h2
+                style={{
+                  color: tema.gold,
+                  fontFamily: "Georgia, serif",
+                  fontSize: "1.2rem",
+                  fontWeight: "800",
+                  margin: 0,
+                }}
+              >
+                Control de stock
+              </h2>
+              <button
+                style={{
+                  background: tema.bgLight,
+                  border: `1px solid ${tema.border}`,
+                  borderRadius: "50%",
+                  width: "34px",
+                  height: "34px",
+                  color: tema.text,
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+                onClick={() => setVerStock(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              style={{
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+              }}
+            >
+              {stockProductos.length === 0 && (
+                <p
+                  style={{
+                    color: tema.textFaded,
+                    textAlign: "center",
+                    padding: "2rem 0",
+                  }}
+                >
+                  Cargando productos...
+                </p>
+              )}
+              {stockProductos.map((p) => (
+                <div
+                  key={p.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 0",
+                    borderBottom: `1px solid ${tema.separador}`,
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontWeight: "700",
+                        fontSize: "14px",
+                        color: tema.text,
+                      }}
+                    >
+                      {p.nombre}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color:
+                          p.stockActual <= p.stockMinimo
+                            ? tema.alertaText
+                            : tema.verde,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {p.stockActual} unidades{" "}
+                      {p.stockActual <= p.stockMinimo ? "— BAJO" : ""}
+                    </div>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="+"
+                    value={cantStock[p.id] || ""}
+                    onChange={(e) =>
+                      setCantStock((prev) => ({
+                        ...prev,
+                        [p.id]: e.target.value,
+                      }))
+                    }
+                    style={{
+                      width: "70px",
+                      padding: "7px",
+                      borderRadius: "8px",
+                      border: `1px solid ${tema.borderFaded}`,
+                      background: tema.inputBg,
+                      color: tema.text,
+                      fontSize: "14px",
+                      textAlign: "center",
+                    }}
+                  />
+                  <button
+                    style={{
+                      background: tema.accent,
+                      color: tema.accentText,
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "8px 14px",
+                      fontWeight: "800",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      opacity: guardandoStock[p.id] ? 0.7 : 1,
+                    }}
+                    onClick={() => agregarStock(p)}
+                    disabled={guardandoStock[p.id]}
+                  >
+                    {guardandoStock[p.id] ? "..." : "Agregar"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

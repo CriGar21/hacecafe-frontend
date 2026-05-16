@@ -20,6 +20,66 @@ const C = {
 
 const serif = "'Georgia', 'Times New Roman', serif";
 
+// ── Pasos del seguimiento en orden ──────────────────────────
+const PASOS = [
+  { estado: "ESPERANDO_APROBACION", label: "Enviado" },
+  { estado: "PENDIENTE", label: "Confirmado" },
+  { estado: "EN_PREPARACION", label: "Preparando" },
+  { estado: "LISTO", label: "¡Listo!" },
+];
+
+const ESTADOS_CLIENTE = {
+  ESPERANDO_APROBACION: {
+    emoji: "⏳",
+    titulo: "Esperando confirmación",
+    texto: "El local está revisando tu pedido...",
+    color: "#C8913A",
+    pasoActual: 0,
+  },
+  PENDIENTE: {
+    emoji: "✓",
+    titulo: "¡Pedido confirmado!",
+    texto: "Tu pedido fue aceptado y pronto empiezan a prepararlo.",
+    color: "#4a8a4a",
+    pasoActual: 1,
+  },
+  EN_PREPARACION: {
+    emoji: "👨‍🍳",
+    titulo: "En preparación",
+    texto: "¡Cocina está trabajando en tu pedido!",
+    color: "#4A8BCC",
+    pasoActual: 2,
+  },
+  LISTO: {
+    emoji: "🔔",
+    titulo: "¡Tu pedido está listo!",
+    texto: "Pasá a retirar o el mozo te lo lleva en un momento.",
+    color: "#4a8a4a",
+    pasoActual: 3,
+  },
+  RECHAZADO: {
+    emoji: "✕",
+    titulo: "Pedido no procesado",
+    texto: "El pedido no pudo procesarse. Hablá con el mozo.",
+    color: "#8B2020",
+    pasoActual: -1,
+  },
+  ENTREGADO: {
+    emoji: "✓",
+    titulo: "¡Pedido entregado!",
+    texto: "Que lo disfrutes. ¡Gracias por tu visita!",
+    color: "#4a8a4a",
+    pasoActual: 4,
+  },
+};
+
+// Normaliza los estados que pueden llegar del socket
+function normalizarEstado(estado) {
+  // El backend puede emitir PENDIENTE cuando aprueba (dependiendo del flujo)
+  if (estado === "APROBADO") return "PENDIENTE";
+  return estado;
+}
+
 export default function MenuCliente() {
   const [searchParams] = useSearchParams();
   const mesaDesdeQR = searchParams.get("mesa") || "";
@@ -122,11 +182,10 @@ export default function MenuCliente() {
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
 
-      setPedidoEnviado({ ...data, estadoSeguimiento: "ESPERANDO" });
+      setPedidoEnviado({ ...data, estadoSeguimiento: "ESPERANDO_APROBACION" });
       setCarrito([]);
       setVerCarrito(false);
 
-      // Usar la variable de entorno correcta — no localhost hardcodeado
       const SOCKET_URL =
         import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
       const socket = io(SOCKET_URL, { transports: ["websocket"] });
@@ -135,9 +194,8 @@ export default function MenuCliente() {
         if (pedidoAprobado.id === data.id) {
           setPedidoEnviado((prev) => ({
             ...prev,
-            estadoSeguimiento: "APROBADO",
+            estadoSeguimiento: "PENDIENTE",
           }));
-          socket.disconnect();
         }
       });
 
@@ -153,15 +211,20 @@ export default function MenuCliente() {
 
       socket.on("pedido_actualizado", (pedido) => {
         if (pedido.id === data.id) {
+          const estadoNorm = normalizarEstado(pedido.estado);
           setPedidoEnviado((prev) => ({
             ...prev,
-            estadoSeguimiento: pedido.estado,
+            estadoSeguimiento: estadoNorm,
           }));
+          // Desconectar solo cuando el pedido ya terminó
+          if (["ENTREGADO", "COBRADO", "CANCELADO"].includes(pedido.estado)) {
+            socket.disconnect();
+          }
         }
       });
 
-      // Timeout de seguridad — si en 5 minutos no llega respuesta, desconectar
-      setTimeout(() => socket.disconnect(), 5 * 60 * 1000);
+      // Timeout de seguridad: 30 minutos
+      setTimeout(() => socket.disconnect(), 30 * 60 * 1000);
     } catch (error) {
       alert(error.message || "Error al enviar el pedido");
     } finally {
@@ -169,29 +232,15 @@ export default function MenuCliente() {
     }
   };
 
-  // ── Confirmado ──────────────────────────────────────────────
+  // ── Pantalla de seguimiento ──────────────────────────────
   if (pedidoEnviado) {
-    const estado = pedidoEnviado.estadoSeguimiento || "ESPERANDO";
-
-    const ESTADOS_CLIENTE = {
-      ESPERANDO: {
-        emoji: "⏳",
-        texto: "Esperando confirmación del local...",
-        color: "#C8913A",
-      },
-      APROBADO: {
-        emoji: "✓",
-        texto: "¡Pedido confirmado! Lo están preparando.",
-        color: "#4a8a4a",
-      },
-      RECHAZADO: {
-        emoji: "✕",
-        texto: "El pedido no pudo procesarse. Hablá con el mozo.",
-        color: "#8B2020",
-      },
-    };
-
-    const info = ESTADOS_CLIENTE[estado];
+    const estado = pedidoEnviado.estadoSeguimiento || "ESPERANDO_APROBACION";
+    const info =
+      ESTADOS_CLIENTE[estado] || ESTADOS_CLIENTE["ESPERANDO_APROBACION"];
+    const pasoActual = info.pasoActual;
+    const esRechazado = estado === "RECHAZADO";
+    const esTerminado = ["ENTREGADO", "COBRADO"].includes(estado);
+    const mostrarProgreso = !esRechazado;
 
     return (
       <div
@@ -215,46 +264,60 @@ export default function MenuCliente() {
             border: "1px solid #3a3228",
           }}
         >
+          {/* Ícono de estado */}
           <div
             style={{
               width: "72px",
               height: "72px",
               borderRadius: "50%",
-              background: "rgba(200,145,58,0.15)",
+              background: `${info.color}18`,
               border: `2px solid ${info.color}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              margin: "0 auto 1.5rem",
+              margin: "0 auto 1.2rem",
               fontSize: "2rem",
-              color: info.color,
             }}
           >
             {info.emoji}
           </div>
+
+          {/* Número de pedido */}
           <h2
             style={{
               color: "#C8913A",
               fontFamily: "Georgia, serif",
               fontWeight: "700",
               fontSize: "1.4rem",
-              margin: "0 0 8px",
+              margin: "0 0 6px",
             }}
           >
             Pedido #{pedidoEnviado.numero}
           </h2>
+
+          {/* Título y texto del estado */}
           <p
             style={{
               color: info.color,
+              margin: "0 0 4px",
+              fontSize: "16px",
+              fontWeight: "700",
+            }}
+          >
+            {info.titulo}
+          </p>
+          <p
+            style={{
+              color: "#9A8870",
               margin: "0 0 1.5rem",
-              fontSize: "15px",
-              fontWeight: "600",
+              fontSize: "13px",
             }}
           >
             {info.texto}
           </p>
 
-          {estado === "ESPERANDO" && (
+          {/* Puntos animados solo en ESPERANDO */}
+          {estado === "ESPERANDO_APROBACION" && (
             <div
               style={{
                 display: "flex",
@@ -278,6 +341,114 @@ export default function MenuCliente() {
             </div>
           )}
 
+          {/* ── Barra de progreso ── */}
+          {mostrarProgreso && (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  position: "relative",
+                  padding: "0 8px",
+                }}
+              >
+                {/* Línea de fondo — va de centro del 1er círculo al centro del último */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "14px",
+                    left: "calc(12.5% + 6px)",
+                    right: "calc(12.5% + 6px)",
+                    height: "2px",
+                    background: "#3a3228",
+                    zIndex: 0,
+                  }}
+                />
+                {/* Línea de progreso */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "14px",
+                    left: "calc(12.5% + 6px)",
+                    height: "2px",
+                    background: "#C8913A",
+                    zIndex: 1,
+                    width:
+                      pasoActual === 0
+                        ? "0%"
+                        : pasoActual === 1
+                          ? "33%"
+                          : pasoActual === 2
+                            ? "66%"
+                            : "75%",
+                    transition: "width 0.6s ease",
+                  }}
+                />
+                {/* Pasos */}
+                {PASOS.map((paso, idx) => {
+                  const completado = idx < pasoActual;
+                  const activo = idx === pasoActual;
+                  return (
+                    <div
+                      key={paso.estado}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "6px",
+                        zIndex: 2,
+                        flex: 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "50%",
+                          background: completado
+                            ? "#C8913A"
+                            : activo
+                              ? "#C8913A"
+                              : "#2e2820",
+                          border: activo
+                            ? "2px solid #C8913A"
+                            : completado
+                              ? "2px solid #C8913A"
+                              : "2px solid #3a3228",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "13px",
+                          color: completado || activo ? "#1a1612" : "#9A8870",
+                          fontWeight: "800",
+                          transition: "all 0.4s ease",
+                          boxShadow: activo
+                            ? "0 0 0 4px rgba(200,145,58,0.2)"
+                            : "none",
+                        }}
+                      >
+                        {completado ? "✓" : idx + 1}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          color: completado || activo ? "#C8913A" : "#9A8870",
+                          fontWeight: activo ? "700" : "400",
+                          textAlign: "center",
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {paso.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Detalle del pedido */}
           <div
             style={{
               border: "1px solid #3a3228",
@@ -323,7 +494,8 @@ export default function MenuCliente() {
             </div>
           </div>
 
-          {(estado === "RECHAZADO" || estado === "APROBADO") && (
+          {/* Botón de acción según estado */}
+          {(esRechazado || esTerminado) && (
             <button
               style={{
                 background: "#C8913A",
@@ -339,17 +511,17 @@ export default function MenuCliente() {
               }}
               onClick={() => setPedidoEnviado(null)}
             >
-              {estado === "RECHAZADO" ? "Volver al menú" : "Hacer otro pedido"}
+              {esRechazado ? "Volver al menú" : "Hacer otro pedido"}
             </button>
           )}
         </div>
 
         <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.3; transform: scale(0.8); }
-          50% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
+          @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -371,7 +543,6 @@ export default function MenuCliente() {
           borderBottom: `1px solid ${C.border}`,
         }}
       >
-        {/* Imagen portada */}
         <div
           style={{
             width: "100%",
@@ -404,7 +575,6 @@ export default function MenuCliente() {
           </div>
         </div>
 
-        {/* Nombre del local */}
         <div
           style={{
             textAlign: "center",
@@ -448,7 +618,6 @@ export default function MenuCliente() {
             Cafetería & Cocina Artesanal
           </p>
 
-          {/* Info mesa y estado */}
           <div
             style={{
               display: "flex",
@@ -580,7 +749,7 @@ export default function MenuCliente() {
         <div style={{ height: "1px", flex: 1, background: C.border }} />
       </div>
 
-      {/* ── LISTA DE PRODUCTOS — estilo carta ── */}
+      {/* ── LISTA DE PRODUCTOS ── */}
       <div
         style={{
           padding: "0 1.5rem",
@@ -601,7 +770,6 @@ export default function MenuCliente() {
                   padding: "14px 0",
                 }}
               >
-                {/* Nombre y descripción */}
                 <div
                   style={{ flex: 1, cursor: "pointer", minWidth: 0 }}
                   onClick={() => abrirDetalle(producto)}
@@ -664,7 +832,6 @@ export default function MenuCliente() {
                   )}
                 </div>
 
-                {/* Puntos decorativos */}
                 <div
                   style={{
                     flex: "0 0 40px",
@@ -674,7 +841,6 @@ export default function MenuCliente() {
                   }}
                 />
 
-                {/* Precio */}
                 <span
                   style={{
                     fontWeight: "700",
@@ -687,7 +853,6 @@ export default function MenuCliente() {
                   ${Number(producto.precio).toLocaleString()}
                 </span>
 
-                {/* Controles */}
                 {item ? (
                   <div
                     style={{
@@ -771,7 +936,6 @@ export default function MenuCliente() {
                 )}
               </div>
 
-              {/* Separador */}
               {idx < productosFiltrados.length - 1 && (
                 <div
                   style={{ height: "1px", background: C.border, opacity: 0.5 }}
@@ -806,7 +970,6 @@ export default function MenuCliente() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Handle */}
             <div
               style={{
                 width: "36px",
@@ -816,8 +979,6 @@ export default function MenuCliente() {
                 margin: "0 auto 1.2rem",
               }}
             />
-
-            {/* Header: imagen + nombre + precio */}
             <div
               style={{
                 display: "flex",
@@ -872,7 +1033,6 @@ export default function MenuCliente() {
               </div>
             </div>
 
-            {/* Descripción */}
             {productoDetalle.descripcion && (
               <p
                 style={{
@@ -890,7 +1050,6 @@ export default function MenuCliente() {
               </p>
             )}
 
-            {/* Nota especial */}
             <div style={{ marginBottom: "1rem" }}>
               <label
                 style={{
@@ -924,7 +1083,6 @@ export default function MenuCliente() {
               />
             </div>
 
-            {/* Controles cantidad + confirmar */}
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               {enCarrito(productoDetalle.id) && (
                 <div
@@ -1237,7 +1395,6 @@ export default function MenuCliente() {
                       ${(Number(item.precio) * item.cantidad).toLocaleString()}
                     </span>
                   </div>
-                  {/* Nota editable en carrito */}
                   <input
                     type="text"
                     value={item.nota || ""}
@@ -1260,7 +1417,6 @@ export default function MenuCliente() {
               ))}
             </div>
 
-            {/* Mesa si no viene del QR */}
             {!mesaDesdeQR && (
               <div>
                 <label
