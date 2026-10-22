@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import { leerConfig, derivarColores, getFuente } from "../utils/menuConfig";
@@ -22,16 +22,6 @@ export default function MenuCliente() {
 
   // ── Config de apariencia (se lee de localStorage) ──
   const [cfg, setCfg] = useState(leerConfig);
-
-  // Carga el visor 3D una sola vez. No requiere instalar paquetes adicionales.
-  useEffect(() => {
-    if (document.querySelector('script[data-hacecafe-model-viewer="true"]')) return;
-    const script = document.createElement("script");
-    script.type = "module";
-    script.src = "https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js";
-    script.dataset.hacecafeModelViewer = "true";
-    document.head.appendChild(script);
-  }, []);
 
   // Relee la config si cambia en otra pestaña
   useEffect(() => {
@@ -63,10 +53,6 @@ export default function MenuCliente() {
   const [enviando, setEnviando]         = useState(false);
   const [pedidoEnviado, setPedidoEnviado] = useState(null);
   const [productoDetalle, setProductoDetalle] = useState(null);
-  const [visorProducto, setVisorProducto] = useState(null);
-  const [modoVisor, setModoVisor] = useState("3d");
-  const [visorError, setVisorError] = useState("");
-  const visorRef = useRef(null);
   const [notaDetalle, setNotaDetalle]   = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [soloDestacados, setSoloDestacados] = useState(false);
@@ -144,35 +130,6 @@ export default function MenuCliente() {
     if (!item) agregarAlCarrito(productoDetalle, notaDetalle);
     else actualizarNota(productoDetalle.id, notaDetalle);
     cerrarDetalle();
-  };
-
-  const abrirVisor = (producto, modo = "3d") => {
-    setVisorError("");
-    setModoVisor(modo);
-    setVisorProducto(producto);
-  };
-
-  const cerrarVisor = () => {
-    setVisorProducto(null);
-    setVisorError("");
-  };
-
-  const obtenerModelo3D = producto => producto?.modelo3DUrl || producto?.modelo3dUrl || producto?.modeloUrl || producto?.modelUrl || producto?.modeloGLBUrl || "";
-  const obtenerModeloUSDZ = producto => producto?.modeloUSDZUrl || producto?.usdzUrl || producto?.modelUsdzUrl || "";
-
-  const activarAR = async () => {
-    setVisorError("");
-    const visor = visorRef.current;
-    if (!visor) {
-      setVisorError("El visor 3D todavía se está cargando. Probá nuevamente en unos segundos.");
-      return;
-    }
-    if (typeof visor.activateAR !== "function") {
-      setVisorError("Este navegador no tiene disponible la función de realidad aumentada. Probá desde Safari en iPhone o Chrome en Android.");
-      return;
-    }
-    try { await visor.activateAR(); }
-    catch { setVisorError("No se pudo iniciar la cámara. Verificá el permiso de cámara y abrí HaceCafe desde HTTPS."); }
   };
 
   const confirmarPedido = async () => {
@@ -422,10 +379,6 @@ export default function MenuCliente() {
                   <span style={{ fontFamily:fuente, fontSize:"1.3rem", fontWeight:"900", color:C.gold, flexShrink:0 }}>${Number(productoDetalle.precio).toLocaleString()}</span>
                 </div>
                 {productoDetalle.descripcion && <p style={{ color:C.textSub, fontSize:"14px", lineHeight:1.75, margin:"10px 0 0" }}>{productoDetalle.descripcion}</p>}
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"9px", marginTop:"16px" }}>
-                  <button type="button" onClick={() => abrirVisor(productoDetalle, "3d")} style={{ border:`1px solid ${C.gold}`, background:C.goldFaded, color:C.gold, borderRadius:"12px", padding:"12px 8px", fontWeight:"800", fontSize:"12px", cursor:"pointer" }}>⟳ Ver en 3D</button>
-                  <button type="button" onClick={() => abrirVisor(productoDetalle, "ar")} style={{ border:`1px solid ${C.borderHover}`, background:C.card, color:C.text, borderRadius:"12px", padding:"12px 8px", fontWeight:"800", fontSize:"12px", cursor:"pointer" }}>⌖ Ver en mi mesa</button>
-                </div>
               </div>
 
               {productoDetalle.tiempoPreparacion && (
@@ -456,44 +409,6 @@ export default function MenuCliente() {
           </div>
         </div>
       )}
-
-      {/* VISOR 3D / REALIDAD AUMENTADA */}
-      {visorProducto && (() => {
-        const modelo = obtenerModelo3D(visorProducto);
-        const usdz = obtenerModeloUSDZ(visorProducto);
-        const imagen = visorProducto.imagenUrl || "";
-        return (
-          <div role="dialog" aria-modal="true" aria-label={`Visualización de ${visorProducto.nombre}`} style={{ position:"fixed", inset:0, zIndex:500, background:"rgba(0,0,0,.82)", display:"flex", alignItems:"center", justifyContent:"center", padding:"14px", backdropFilter:"blur(12px)" }} onClick={cerrarVisor}>
-            <div style={{ width:"100%", maxWidth:"560px", maxHeight:"94vh", overflowY:"auto", borderRadius:"24px", border:`1px solid ${C.border}`, background:C.bgModal, color:C.text, boxShadow:"0 24px 80px rgba(0,0,0,.45)" }} onClick={e => e.stopPropagation()}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:"12px", padding:"18px 18px 12px" }}>
-                <div><div style={{ fontSize:"10px", textTransform:"uppercase", letterSpacing:"2px", color:C.gold, fontWeight:"800" }}>Experiencia interactiva</div><h2 style={{ margin:"5px 0 0", fontFamily:fuente, fontSize:"20px" }}>{visorProducto.nombre}</h2></div>
-                <button type="button" aria-label="Cerrar visor" onClick={cerrarVisor} style={{ width:"36px", height:"36px", borderRadius:"50%", border:`1px solid ${C.border}`, background:C.card, color:C.text, cursor:"pointer", fontSize:"18px" }}>×</button>
-              </div>
-              <div style={{ display:"flex", gap:"8px", padding:"0 18px 14px" }}>
-                <button type="button" onClick={() => { setModoVisor("3d"); setVisorError(""); }} style={{ flex:1, borderRadius:"10px", border:`1px solid ${modoVisor==="3d"?C.gold:C.border}`, background:modoVisor==="3d"?C.goldFaded:"transparent", color:modoVisor==="3d"?C.gold:C.textSub, padding:"10px", fontWeight:"800", cursor:"pointer" }}>⟳ Explorar 3D</button>
-                <button type="button" onClick={() => { setModoVisor("ar"); setVisorError(""); }} style={{ flex:1, borderRadius:"10px", border:`1px solid ${modoVisor==="ar"?C.gold:C.border}`, background:modoVisor==="ar"?C.goldFaded:"transparent", color:modoVisor==="ar"?C.gold:C.textSub, padding:"10px", fontWeight:"800", cursor:"pointer" }}>⌖ Ver en mi mesa</button>
-              </div>
-              <div style={{ margin:"0 18px", borderRadius:"16px", overflow:"hidden", background:`radial-gradient(ellipse at center, ${lighten(C.bg,0.12)}, ${C.bg})`, minHeight:"300px", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }}>
-                {modelo ? (
-                  <model-viewer ref={visorRef} key={`${modelo}-${modoVisor}`} src={modelo} ios-src={usdz || undefined} poster={imagen || undefined} alt={`Modelo 3D de ${visorProducto.nombre}`} camera-controls auto-rotate shadow-intensity="1" exposure="1" ar ar-modes="webxr scene-viewer quick-look" style={{ width:"100%", height:"min(52vh, 440px)", minHeight:"300px", backgroundColor:"transparent", color:C.text }} loading="eager">
-                    <button slot="ar-button" type="button" onClick={activarAR} style={{ position:"absolute", bottom:"16px", left:"50%", transform:"translateX(-50%)", border:0, borderRadius:"999px", background:C.gold, color:C.bg, padding:"12px 18px", fontWeight:"900", whiteSpace:"nowrap", cursor:"pointer" }}>⌖ Colocar en mi mesa</button>
-                  </model-viewer>
-                ) : (
-                  <div style={{ padding:"28px 22px", textAlign:"center", maxWidth:"360px" }}>
-                    {imagen ? <img src={imagen} alt={visorProducto.nombre} style={{ width:"150px", height:"150px", objectFit:"contain", borderRadius:"16px", marginBottom:"14px", filter:"drop-shadow(0 15px 22px rgba(0,0,0,.35))" }} /> : <div style={{ fontSize:"64px", marginBottom:"12px" }}>☕</div>}
-                    <div style={{ fontWeight:"900", fontSize:"16px", marginBottom:"8px" }}>Todavía falta crear el modelo 3D</div>
-                    <p style={{ color:C.textSub, fontSize:"13px", lineHeight:1.7, margin:0 }}>Esta es la foto del menú. Para girar la bebida o colocarla con la cámara necesitamos convertirla primero en un archivo 3D (GLB; y opcionalmente USDZ para iPhone).</p>
-                  </div>
-                )}
-              </div>
-              {visorError && <p role="alert" style={{ margin:"12px 18px 0", padding:"10px 12px", borderRadius:"10px", background:"rgba(190,70,50,.12)", color:"#f0a090", fontSize:"12px", lineHeight:1.5 }}>{visorError}</p>}
-              <div style={{ padding:"14px 18px 18px" }}>
-                {modelo ? (modoVisor === "ar" ? <button type="button" onClick={activarAR} style={{ width:"100%", border:0, borderRadius:"12px", background:C.gold, color:C.bg, padding:"14px", fontWeight:"900", cursor:"pointer" }}>⌖ Abrir cámara y colocar bebida</button> : <p style={{ margin:0, textAlign:"center", color:C.textSub, fontSize:"12px" }}>Arrastrá para girar y usá dos dedos para acercar o alejar.</p>) : <div style={{ padding:"12px", borderRadius:"12px", background:C.card, border:`1px solid ${C.border}`, color:C.textSub, fontSize:"12px", lineHeight:1.6 }}>La generación automática desde una foto requiere conectar un servicio de IA de imagen a 3D en el backend. Esta pantalla ya acepta el modelo cuando esté generado; todavía no se inventa un 3D falso ni se envía la foto a un proveedor externo.</div>}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* CARRITO FLOTANTE */}
       {carrito.length > 0 && !verCarrito && (
