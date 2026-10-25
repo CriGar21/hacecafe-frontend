@@ -181,3 +181,16 @@
  .hc-employee .hc-cash-ticket-row { grid-template-columns:1fr; }
  .hc-employee .hc-cash-ticket-total { font-size:17px; }
 }
+
+
+/* Empleado: pestañas distribuidas en todo el ancho, no agrupadas a la izquierda */
+.hc-employee .hc-ops-tabs { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; width:100% !important; box-sizing:border-box; }
+.hc-employee .hc-ops-tab { width:100% !important; min-width:0; min-height:60px; justify-content:center; text-align:center; font-size:clamp(15px,1.15vw,18px); padding:15px 12px !important; }
+.hc-employee .hc-cash-history-filter { display:grid; grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) minmax(150px,.8fr); gap:12px; width:100%; min-width:0; }
+.hc-employee .hc-cash-history-filter input, .hc-employee .hc-cash-history-filter button { width:100%; min-width:0; }
+@media(max-width:760px) {
+ .hc-employee .hc-ops-tabs { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+ .hc-employee .hc-ops-tab { min-height:60px; font-size:15px; }
+ .hc-employee .hc-cash-history-filter { grid-template-columns:1fr; }
+ .hc-employee .hc-cash-history-filter input, .hc-employee .hc-cash-history-filter button { min-height:52px !important; }
+}
