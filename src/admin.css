@@ -118,3 +118,66 @@
 .hc-ticket-modal button:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .hc-ticket-modal button:focus-visible { outline: 2px solid #f2d4a6; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .hc-ticket-backdrop, .hc-ticket-modal { animation: none !important; } }
+
+
+/* Caja: controles amplios, recuperación de tickets y responsive real */
+.hc-employee { width:100%; max-width:none; margin:0 auto; padding:clamp(16px,2.4vw,36px) !important; }
+.hc-employee .hc-ops-header, .hc-employee .hc-ops-tabs, .hc-employee > .hc-ops-content { width:100%; }
+.hc-employee .hc-ops-tabs { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px !important; }
+.hc-employee .hc-ops-tab { min-height:58px; padding:14px 18px !important; font-size:clamp(14px,1.2vw,17px); font-weight:700; }
+.hc-employee .hc-ops-section-title { margin:8px 0 4px; }
+.hc-employee .hc-ops-toolbar, .hc-employee [style*="flex-wrap: wrap"] { width:100%; }
+.hc-employee .hc-ops input, .hc-employee .hc-ops select, .hc-employee .hc-ops textarea { min-width:0; }
+.hc-employee .hc-cash-search, .hc-employee .hc-cash-history { width:100%; box-sizing:border-box; padding:clamp(18px,2.4vw,30px); border:1px solid var(--hc-ops-line); border-radius:22px; background:linear-gradient(145deg,rgba(48,32,20,.92),rgba(28,17,10,.96)); box-shadow:0 14px 34px rgba(0,0,0,.16); }
+.hc-employee .hc-cash-search h3, .hc-employee .hc-cash-history h3 { margin:0 0 8px; color:var(--hc-ops-gold); font-size:clamp(19px,1.7vw,24px); }
+.hc-employee .hc-cash-search p, .hc-employee .hc-cash-history p { margin:0 0 18px; color:var(--hc-ops-muted); line-height:1.5; }
+.hc-employee .hc-cash-search-controls { display:grid; grid-template-columns:minmax(150px,.7fr) minmax(220px,1.4fr) minmax(180px,.8fr); gap:14px; align-items:stretch; }
+.hc-employee .hc-cash-search-controls select, .hc-employee .hc-cash-search-controls input, .hc-employee .hc-cash-search-controls button, .hc-employee .hc-cash-history-filter input, .hc-employee .hc-cash-history-filter button { width:100%; min-height:54px !important; box-sizing:border-box; font-size:16px; }
+.hc-employee .hc-cash-history-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; }
+.hc-employee .hc-cash-history-filter { display:grid; grid-template-columns:minmax(170px,1fr) minmax(150px,.8fr); gap:12px; min-width:min(100%,420px); }
+.hc-employee .hc-cash-ticket-list { display:grid; gap:10px; }
+.hc-employee .hc-cash-ticket-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:18px; align-items:center; padding:16px; border:1px solid var(--hc-ops-line); border-radius:15px; background:rgba(12,7,4,.28); }
+.hc-employee .hc-cash-ticket-row > div { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.hc-employee .hc-cash-ticket-row span { color:var(--hc-ops-muted); font-size:14px; }
+.hc-employee .hc-cash-ticket-total { color:var(--hc-ops-gold); font-size:18px; white-space:nowrap; }
+.hc-employee .hc-cash-ticket-row button { min-height:46px; padding:10px 18px; }
+.hc-employee .hc-cash-empty { padding:18px 0; }
+.hc-employee .hc-ops-toolbar { display:grid; grid-template-columns:minmax(150px,.7fr) minmax(200px,1.5fr) auto; gap:12px; align-items:stretch; }
+.hc-employee .hc-ops-toolbar input, .hc-employee .hc-ops-toolbar select, .hc-employee .hc-ops-toolbar button { min-height:54px !important; font-size:16px; }
+.hc-employee .hc-ops-primary, .hc-employee button[style*="btnPrimario"] { min-height:50px; padding:13px 20px !important; font-size:15px; font-weight:800; }
+.hc-employee .hc-ops-cart { width:100%; box-sizing:border-box; }
+.hc-employee .hc-ops-cart > input, .hc-employee .hc-ops-cart > textarea, .hc-employee .hc-ops-cart > button { width:100%; box-sizing:border-box; }
+.hc-employee .hc-ops-cart > button:last-child { min-height:56px; font-size:16px; }
+.hc-employee .hc-ops-products { grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr)) !important; }
+.hc-employee .hc-ops-product { min-height:126px; }
+@media(max-width:900px) {
+ .hc-employee .hc-cash-search-controls { grid-template-columns:1fr 1fr; }
+ .hc-employee .hc-cash-search-button { grid-column:1 / -1; }
+ .hc-employee .hc-cash-history-heading { align-items:stretch; flex-direction:column; gap:8px; }
+ .hc-employee .hc-cash-history-filter { min-width:0; }
+}
+@media(max-width:600px) {
+ .hc-employee { padding:12px !important; }
+ .hc-employee .hc-ops-header { align-items:center !important; padding:10px 2px 15px !important; }
+ .hc-employee .hc-ops-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px !important; }
+ .hc-employee .hc-ops-tab { min-height:56px; padding:12px 8px !important; white-space:normal; line-height:1.2; }
+ .hc-employee .hc-cash-search, .hc-employee .hc-cash-history { padding:16px; border-radius:17px; }
+ .hc-employee .hc-cash-search-controls, .hc-employee .hc-ops-toolbar { grid-template-columns:1fr; }
+ .hc-employee .hc-cash-search-button { grid-column:auto; }
+ .hc-employee .hc-cash-history-filter { grid-template-columns:1fr; }
+ .hc-employee .hc-cash-ticket-row { grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:13px; }
+ .hc-employee .hc-cash-ticket-row > div { grid-column:1 / -1; }
+ .hc-employee .hc-cash-ticket-row button { grid-column:1 / -1; width:100%; min-height:48px; }
+ .hc-employee .hc-ops-product { padding:12px !important; min-height:100px; }
+ .hc-employee .hc-ops-product-image, .hc-employee .hc-ops-product-monogram { flex-basis:68px; width:68px; height:68px; }
+ .hc-employee .hc-ops-cart { padding:14px !important; }
+ .hc-employee .hc-ops-cart h3 { margin-top:2px; }
+ .hc-employee .hc-ops-cart > div { flex-wrap:wrap; }
+ .hc-employee .hc-ops-cart > div button { min-width:44px; min-height:44px; }
+ .hc-employee .hc-ops-primary, .hc-employee button[style*="btnPrimario"] { min-height:54px; width:100%; }
+}
+@media(max-width:380px) {
+ .hc-employee .hc-ops-tab { font-size:13px; }
+ .hc-employee .hc-cash-ticket-row { grid-template-columns:1fr; }
+ .hc-employee .hc-cash-ticket-total { font-size:17px; }
+}
