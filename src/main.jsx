@@ -10,6 +10,7 @@ import "./hcWorkflowBridge.js";
 import "./hcNoEmoji.js";
 import "./hcOrderRealtime.js";
 import "./hcQRRepair.jsx";
+import "./hcOrderPolicy.js";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
