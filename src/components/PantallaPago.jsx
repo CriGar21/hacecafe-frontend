@@ -161,7 +161,7 @@ export default function PantallaPago({
             Método de pago
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            {["EFECTIVO", "QR", "TRANSFERENCIA"].map((m) => (
+            {["EFECTIVO", "QR", "TRANSFERENCIA", "TARJETA"].map((m) => (
               <button
                 key={m}
                 style={{
@@ -185,7 +185,9 @@ export default function PantallaPago({
                   ? "Efectivo"
                   : m === "QR"
                     ? "Mercado Pago"
-                    : "Transferencia"}
+                    : m === "TARJETA"
+                      ? "Tarjeta"
+                      : "Transferencia"}
               </button>
             ))}
           </div>
@@ -221,6 +223,15 @@ export default function PantallaPago({
               <div style={{ color: C.textSub, fontSize: "13px" }}>
                 Una vez recibido el dinero, confirmá el cobro.
               </div>
+            </div>
+          )}
+
+          {metodoPago === "TARJETA" && (
+            <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
+              <div aria-hidden="true" style={{ width: "76px", height: "76px", margin: "0 auto 1.2rem", display: "grid", placeItems: "center", border: `1px solid ${C.gold}`, borderRadius: "22px", color: C.goldCl, fontFamily: "Georgia, serif", fontSize: "15px", letterSpacing: "1px", background: "linear-gradient(145deg, #3a2818, #1c120b)", boxShadow: "0 12px 35px rgba(0,0,0,.28)" }}>POS</div>
+              <div style={{ color: C.cream, fontWeight: 700, fontSize: "16px", marginBottom: "8px" }}>Cobro con tarjeta</div>
+              <div style={{ color: C.textSub, fontSize: "13px", lineHeight: 1.6 }}>Procesá el pago en el terminal de tarjetas del local. Confirmá el cobro únicamente cuando la operación haya sido aprobada.</div>
+              <div style={{ color: C.gold, fontFamily: "Georgia, serif", fontWeight: 900, fontSize: "2rem", marginTop: "18px" }}>${total.toLocaleString("es-AR")}</div>
             </div>
           )}
 
