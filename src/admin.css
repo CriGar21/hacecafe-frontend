@@ -71,3 +71,25 @@
  .admin-shell .admin-contenido { padding-left: 12px !important; padding-right: 12px !important; }
 }
 @media(prefers-reduced-motion:reduce) { .hc-ops *, .admin-shell * { transition: none !important; animation: none !important; } }
+
+
+/* Product cards and order board details */
+.hc-employee .hc-ops-products { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)) !important; gap:14px !important; }
+.hc-employee .hc-ops-product { display:flex !important; flex-direction:row !important; align-items:center !important; gap:13px !important; width:100%; min-width:0; }
+.hc-employee .hc-ops-product-image, .hc-employee .hc-ops-product-monogram { flex:0 0 82px; width:82px; height:82px; border-radius:14px; object-fit:cover; background:linear-gradient(135deg,#5a3921,#2b1a0f); }
+.hc-employee .hc-ops-product-monogram { display:flex; align-items:center; justify-content:center; color:#e4b16f; font:500 34px Georgia,serif; border:1px solid rgba(222,174,112,.2); }
+.hc-employee .hc-ops-product-copy { display:flex; flex:1; min-width:0; flex-direction:column; align-items:flex-start; gap:7px; }
+.hc-employee .hc-ops-product-name { color:#f8ecdc; font-size:16px; font-weight:700; line-height:1.25; }
+.hc-employee .hc-ops-cart { border:1px solid var(--hc-line); background:linear-gradient(145deg,#2b1b10,#1c110a) !important; border-radius:18px !important; padding:18px !important; }
+.hc-employee .hc-ops-card { border:1px solid var(--hc-line) !important; background:linear-gradient(145deg,#2b1b10,#1c110a) !important; border-radius:18px !important; }
+.hc-employee .hc-ops-card button, .hc-kitchen button { border-radius:12px !important; }
+.hc-kitchen .hc-kitchen-order { box-shadow:0 14px 30px rgba(0,0,0,.22) !important; border-radius:18px !important; padding:18px !important; }
+.hc-kitchen .hc-ops-card { background:linear-gradient(145deg,#2b1b10,#1c110a) !important; }
+.hc-kitchen h1, .hc-kitchen h2, .hc-kitchen h3 { letter-spacing:-.025em; }
+.admin-shell .admin-sidebar button { margin:3px 8px !important; border-radius:11px !important; }
+.admin-shell .admin-sidebar button:hover { background:rgba(228,177,111,.1) !important; }
+.admin-shell .admin-contenido > div { max-width: 1600px; }
+@media(max-width:600px) {
+ .hc-employee .hc-ops-products { grid-template-columns:1fr !important; }
+ .hc-employee .hc-ops-product-image, .hc-employee .hc-ops-product-monogram { flex-basis:72px; width:72px; height:72px; }
+}
