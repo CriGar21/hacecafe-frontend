@@ -8,7 +8,7 @@ export const FUENTES_DISPONIBLES = [
   { id: "playfair", label: "Playfair Display", css: "'Playfair Display', Georgia, serif", google: "Playfair+Display:wght@500;700;800" },
   { id: "merriweather", label: "Merriweather", css: "'Merriweather', Georgia, serif", google: "Merriweather:wght@400;700;900" },
   { id: "raleway", label: "Raleway", css: "'Raleway', sans-serif", google: "Raleway:wght@500;700;800" },
-  { id: "josefin", label: "Josefin Sans", css: "'Josefin Sans', sans-serif", google: "Josefin+Sans:wght@500;700" },
+  { id: "josefin", label: "Josefin Sans", css: "'Josefin+Sans', sans-serif", google: "Josefin+Sans:wght@500;700" },
   { id: "poppins", label: "Poppins", css: "'Poppins', sans-serif", google: "Poppins:wght@500;600;700;800" },
   { id: "outfit", label: "Outfit", css: "'Outfit', sans-serif", google: "Outfit:wght@500;600;700;800" },
 ];
@@ -26,25 +26,29 @@ export function leerConfig() {
   } catch { return CONFIG_DEFAULT; }
 }
 
-// Guarda inmediatamente el caché local y, si hay sesión, persiste también en el backend.
 export function guardarConfig(cfg) {
   localStorage.setItem(CACHE_KEY, JSON.stringify(cfg));
   const token = localStorage.getItem("token");
   if (!token) return Promise.resolve(cfg);
+
   return fetch(`${API}/config/apariencia`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(cfg),
-  }).then(async (r) => {
-    if (!r.ok) {
+  })
+    .then(async (r) => {
       const data = await r.json().catch(() => ({}));
-      throw new Error(data.error || "No se pudo guardar la apariencia");
-    }
-    const data = await r.json();
-    const completa = { ...CONFIG_DEFAULT, ...data };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(completa));
-    return completa;
-  });
+      if (!r.ok) throw new Error(data.error || "No se pudo guardar la apariencia");
+      const completa = { ...CONFIG_DEFAULT, ...data };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(completa));
+      window.dispatchEvent(new Event("menu-apariencia-guardada"));
+      return completa;
+    })
+    .catch((error) => {
+      console.error("Error guardando apariencia:", error);
+      alert(error.message || "No se pudo guardar la apariencia en el servidor");
+      throw error;
+    });
 }
 
 export function useMenuConfig() {
@@ -56,12 +60,19 @@ export function useMenuConfig() {
       .then((data) => {
         if (!vivo || !data || typeof data !== "object") return;
         const completa = { ...CONFIG_DEFAULT, ...data };
-        setCfg(completa); localStorage.setItem(CACHE_KEY, JSON.stringify(completa));
+        setCfg(completa);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(completa));
       })
       .catch(() => {});
-    const alCambiarStorage = () => setCfg(leerConfig());
-    window.addEventListener("storage", alCambiarStorage);
-    return () => { vivo = false; window.removeEventListener("storage", alCambiarStorage); };
+
+    const actualizar = () => setCfg(leerConfig());
+    window.addEventListener("storage", actualizar);
+    window.addEventListener("menu-apariencia-guardada", actualizar);
+    return () => {
+      vivo = false;
+      window.removeEventListener("storage", actualizar);
+      window.removeEventListener("menu-apariencia-guardada", actualizar);
+    };
   }, []);
   return cfg;
 }
@@ -75,7 +86,9 @@ export function cargarFuente(id) {
   if (!fuente || !fuente.google || typeof document === "undefined") return;
   const linkId = `gf-${fuente.id}`;
   if (document.getElementById(linkId)) return;
-  const link = document.createElement("link"); link.id = linkId; link.rel = "stylesheet";
+  const link = document.createElement("link");
+  link.id = linkId;
+  link.rel = "stylesheet";
   link.href = `https://fonts.googleapis.com/css2?family=${fuente.google}&display=swap`;
   document.head.appendChild(link);
 }
