@@ -142,6 +142,12 @@ export default function MenuCliente() {
   const mesaQR = searchParams.get("mesa") || "";
 
   const cfg = useMenuConfig();
+  const [mostrarIntro, setMostrarIntro] = useState(true);
+
+  useEffect(() => {
+    const temporizadorIntro = window.setTimeout(() => setMostrarIntro(false), 3400);
+    return () => window.clearTimeout(temporizadorIntro);
+  }, []);
   const P = useMemo(() => buildPaleta(cfg), [cfg]);
   const fuente = getFuente(cfg.fuenteId);
 
@@ -510,6 +516,25 @@ export default function MenuCliente() {
   return (
     <div className="mc" style={vars}>
       <Estilos />
+
+      {mostrarIntro && (
+        <div className="mc-cinema-intro" role="status" aria-label="Bienvenido a HaceCafé">
+          <div className="mc-cinema-grain" />
+          <div className="mc-cinema-glow" />
+          <div className="mc-cinema-brand">
+            <svg className="mc-cinema-mark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+              <path d="M24 42h45v22c0 12-9 21-21 21h-3c-12 0-21-9-21-21V42Z" stroke="currentColor" strokeWidth="2.4"/>
+              <path d="M69 48h6a10 10 0 0 1 0 20h-8" stroke="currentColor" strokeWidth="2.4"/>
+              <path d="M36 31c-5-6 5-8 0-15M49 31c-5-6 5-8 0-15M62 31c-5-6 5-8 0-15" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"/>
+              <path d="M19 91h62" stroke="currentColor" strokeWidth="1.5" opacity=".55"/>
+              <circle cx="50" cy="52" r="5" fill="currentColor" opacity=".9"/>
+            </svg>
+            <div className="mc-cinema-wordmark">Hace<span>Café</span></div>
+            <div className="mc-cinema-rule"><i /><span>EL ARTE DE DISFRUTAR</span><i /></div>
+          </div>
+          <span className="mc-cinema-caption">UN MOMENTO. UN AROMA. TU LUGAR.</span>
+        </div>
+      )}
 
       <header>
         <div className="mc-hero">
@@ -1094,6 +1119,48 @@ const CSS = `
 
 @media (prefers-reduced-motion:reduce){.mc *,.mc *::before,.mc *::after{animation:none!important;transition:none!important}}
 
+/* Entrada cinematográfica de marca al abrir el menú */
+.mc-cinema-intro {
+  position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; overflow: hidden;
+  color: #e8bb7d; background: radial-gradient(ellipse at 50% 43%, #382214 0%, #1b100a 42%, #090604 100%);
+  animation: mc-cinema-exit 1s cubic-bezier(.7,0,.2,1) 2.35s forwards;
+  pointer-events: auto;
+}
+.mc-cinema-grain { position: absolute; inset: -50%; opacity: .13; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");
+}
+.mc-cinema-glow { position: absolute; width: min(78vw, 680px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(221,164,93,.17), rgba(221,164,93,.035) 42%, transparent 70%);
+  filter: blur(8px); animation: mc-cinema-breathe 2.7s ease-in-out both;
+}
+.mc-cinema-brand { position: relative; display: flex; flex-direction: column; align-items: center;
+  animation: mc-cinema-reveal 2.8s cubic-bezier(.16,1,.3,1) both; }
+.mc-cinema-mark { width: clamp(74px, 12vw, 108px); height: auto; filter: drop-shadow(0 0 24px rgba(224,174,109,.18)); }
+.mc-cinema-wordmark { margin-top: 21px; color: #f7ead8; font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(46px, 8vw, 76px); font-weight: 400; letter-spacing: -.055em; line-height: 1; }
+.mc-cinema-wordmark span { color: #e7b875; font-style: italic; }
+.mc-cinema-rule { display: flex; align-items: center; gap: 13px; margin-top: 23px; color: #d7b58a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 9px; letter-spacing: .34em; }
+.mc-cinema-rule i { display: block; width: clamp(20px, 5vw, 52px); height: 1px; background: linear-gradient(90deg, transparent, #c99a5c); }
+.mc-cinema-rule i:last-child { transform: rotate(180deg); }
+.mc-cinema-caption { position: absolute; bottom: 9vh; color: rgba(230,199,160,.62);
+  font: 9px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; letter-spacing: .3em;
+  animation: mc-cinema-caption 1.4s ease .4s both; text-align: center; padding: 0 20px; }
+@keyframes mc-cinema-reveal {
+  0% { opacity: 0; transform: translateY(18px) scale(.88); filter: blur(12px); }
+  22% { opacity: 1; filter: blur(0); }
+  62% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: translateY(-8px) scale(1.045); filter: blur(7px); }
+}
+@keyframes mc-cinema-exit { 0% { opacity: 1; visibility: visible; } 75% { opacity: 0; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes mc-cinema-breathe { 0% { opacity: 0; transform: scale(.7); } 35% { opacity: 1; } 100% { opacity: .5; transform: scale(1.12); } }
+@keyframes mc-cinema-caption { from { opacity: 0; letter-spacing: .55em; } to { opacity: .75; letter-spacing: .3em; } }
+@media (prefers-reduced-motion: reduce) {
+  .mc-cinema-intro { animation-duration: .01ms; animation-delay: 0s; }
+  .mc-cinema-brand { animation-duration: .01ms; }
+  .mc-cinema-glow, .mc-cinema-caption { animation: none; }
+}
 /* Rediseño visual aplicado al CSS real del componente (se inyecta después de App.css). */
 .mc > header { background: #140b06; }
 .mc .mc-hero {
