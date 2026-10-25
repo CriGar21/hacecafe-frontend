@@ -1,0 +1,81 @@
+/* HaceCafe cross-system polish: no platform emoji dependency. */
+
+/* Category rows: hide legacy emoji glyphs and render a stable CSS/SVG-style brand mark. */
+.admin-contenido .listaAdmin .listaItem > div:first-child span[style*="font-size:22px"] {
+  display:grid !important;
+  place-items:center;
+  width:36px !important;
+  height:36px !important;
+  min-width:36px;
+  margin-right:2px;
+  overflow:hidden;
+  font-size:0 !important;
+  line-height:0;
+  color:transparent !important;
+  border:1px solid rgba(228,177,111,.24);
+  border-radius:11px;
+  background:rgba(228,177,111,.07);
+  position:relative;
+}
+.admin-contenido .listaAdmin .listaItem > div:first-child span[style*="font-size:22px"]::before {
+  content:"";
+  width:16px;
+  height:16px;
+  display:block;
+  border:1.7px solid currentColor;
+  border-radius:5px;
+  color:#e4b16f;
+  box-shadow:5px 0 0 -3px #24170f, 0 5px 0 -3px #24170f;
+  transform:rotate(45deg) scale(.82);
+}
+
+/* QR cards: crisp SVG rendering, generous quiet zone and a branded HC badge outside the code. */
+.admin-contenido svg[id^="qr-mesa-"] {
+  display:block;
+  width:170px !important;
+  height:170px !important;
+  max-width:100%;
+  shape-rendering:crispEdges;
+}
+.admin-contenido div:has(> svg[id^="qr-mesa-"]) {
+  position:relative;
+  padding:14px !important;
+  border:1px solid rgba(228,177,111,.22);
+  box-shadow:0 12px 28px rgba(0,0,0,.22);
+}
+.admin-contenido div:has(> svg[id^="qr-mesa-"])::after {
+  content:"HC";
+  position:absolute;
+  top:7px;
+  right:7px;
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border:2px solid #fff;
+  border-radius:7px;
+  background:#c8913a;
+  color:#21170d;
+  font:900 8px/1 Arial,sans-serif;
+  letter-spacing:-.04em;
+  box-shadow:0 2px 7px rgba(0,0,0,.22);
+  pointer-events:none;
+}
+
+/* Keep the QR visually isolated from nearby text and maintain the required quiet zone. */
+.admin-contenido div:has(> svg[id^="qr-mesa-"]) + div {
+  margin-top:2px;
+}
+
+/* Replace the visible print glyphs with a stable CSS icon where the existing QR actions render. */
+.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button {
+  position:relative;
+}
+
+@media (max-width:640px) {
+  .admin-contenido svg[id^="qr-mesa-"] { width:156px !important; height:156px !important; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  * { scroll-behavior:auto !important; }
+}
