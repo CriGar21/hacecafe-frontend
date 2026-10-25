@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const C = {
   bg: "#1a1612",
@@ -16,6 +16,8 @@ export default function PantallaPago({
   metodoPago,
   onPagoConfirmado,
   onCambiarMetodo,
+  onCancelar,
+  cargando = false,
 }) {
   const [copiado, setCopiado] = useState(null);
   const [confirmando, setConfirmando] = useState(false);
@@ -46,27 +48,25 @@ export default function PantallaPago({
     }
 
     setConfirmando(true);
-
     try {
-      console.log("CLICK CONFIRMAR");
       await onPagoConfirmado();
-      console.log("PAGO OK");
     } catch (error) {
-      console.error("ERROR PAGO:", error);
-      alert("Error al confirmar pago");
+      console.error("Error al confirmar el cobro:", error);
+      alert(error?.response?.data?.error || error?.message || "No se pudo confirmar el cobro. Revisá el pedido e intentá nuevamente.");
     } finally {
       setConfirmando(false);
     }
   };
 
-  const total = Number(pedido.total || pedido.totalCobrado || 0);
+  const total = Number(pedido?.total ?? pedido?.totalCobrado ?? 0);
 
   return (
-    <div
+    <div className="hc-payment-backdrop"
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.9)",
+        background: "radial-gradient(ellipse at 50% 15%, rgba(89,53,27,.58), rgba(5,3,2,.94) 70%)",
+        backdropFilter: "blur(12px)",
         zIndex: 500,
         display: "flex",
         alignItems: "center",
@@ -77,7 +77,8 @@ export default function PantallaPago({
       <div
         style={{
           background: C.bgCard,
-          border: `2px solid ${C.gold}`,
+          border: `1px solid ${C.gold}`,
+          boxShadow: "0 30px 100px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.025) inset",
           borderRadius: "20px",
           width: "100%",
           maxWidth: "420px",
@@ -106,10 +107,10 @@ export default function PantallaPago({
                 fontSize: "1.1rem",
               }}
             >
-              Cobrar pedido #{pedido.numero || pedido.numeroPedido || ""}
+              Cobro · Pedido #{pedido?.numero || pedido?.numeroPedido || ""}
             </div>
             <div style={{ color: C.textSub, fontSize: "12px" }}>
-              {pedido.mesa ? `Mesa ${pedido.mesa}` : "Sin mesa"}
+              {pedido?.mesa ? `Mesa ${pedido.mesa}` : "Sin mesa"}
             </div>
           </div>
           <div
@@ -179,7 +180,7 @@ export default function PantallaPago({
           {/* EFECTIVO */}
           {metodoPago === "EFECTIVO" && (
             <div style={{ textAlign: "center", padding: "1rem 0" }}>
-              <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>💵</div>
+              <div aria-hidden="true" style={{ width: "76px", height: "76px", margin: "0 auto 1.2rem", display: "grid", placeItems: "center", border: `1px solid ${C.gold}`, borderRadius: "22px", color: C.goldCl, fontFamily: "Georgia, serif", fontSize: "20px", letterSpacing: "3px", background: "linear-gradient(145deg, #3a2818, #1c120b)", boxShadow: "0 12px 35px rgba(0,0,0,.28)" }}>ARS</div>
               <div
                 style={{
                   color: C.cream,
@@ -502,9 +503,10 @@ export default function PantallaPago({
             gap: "8px",
           }}
         >
+          {onCancelar && <button type="button" onClick={onCancelar} disabled={confirmando || cargando} style={{ background: "transparent", color: C.textSub, border: `1px solid ${C.border}`, borderRadius: "10px", padding: "11px", fontWeight: 700, cursor: "pointer" }}>Volver sin cobrar</button>}
           <button
             style={{
-              background: "#C8913A",
+              background: "linear-gradient(135deg, #f1d09c, #c8913a)",
               color: "#1a0e00",
               border: "none",
               borderRadius: "12px",
@@ -516,10 +518,10 @@ export default function PantallaPago({
               opacity: confirmando ? 0.7 : 1,
             }}
             onClick={confirmar}
-            disabled={confirmando}
+            disabled={confirmando || cargando}
           >
-            {confirmando
-              ? "Procesando..."
+            {confirmando || cargando
+              ? "Procesando cobro..."
               : `Confirmar cobro total — $${total.toLocaleString()}`}
           </button>
           <p
