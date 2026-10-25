@@ -79,6 +79,24 @@
   pointer-events:none;
   z-index:3;
 }
+.hc-qr-test {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  align-self:center;
+  min-height:30px;
+  margin:2px auto 0;
+  padding:6px 11px;
+  border:1px solid rgba(228,177,111,.25);
+  border-radius:8px;
+  color:#e8c58f;
+  background:rgba(228,177,111,.07);
+  font:700 10px/1 Arial,sans-serif;
+  text-decoration:none;
+  transition:transform .16s ease,background .16s ease,border-color .16s ease;
+}
+.hc-qr-test:hover { transform:translateY(-1px); background:rgba(228,177,111,.13); border-color:rgba(228,177,111,.5); }
+.hc-qr-test[data-local="true"] { color:#e7a48f; border-color:rgba(231,164,143,.28); }
 .admin-contenido div:has(> svg[id^="qr-mesa-"]) + div { margin-top:2px; }
 
 /* The QR screen still has legacy print glyph characters in JSX; replace them visually with stable labels. */
