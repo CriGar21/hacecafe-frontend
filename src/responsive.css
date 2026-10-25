@@ -1,0 +1,75 @@
+/* Responsive safeguards for every HaceCafé screen. Loaded last to normalize legacy inline layouts. */
+*, *::before, *::after { box-sizing: border-box; }
+html { width: 100%; min-width: 320px; overflow-x: clip; -webkit-text-size-adjust: 100%; }
+body, #root { width: 100%; max-width: 100%; min-width: 320px; min-height: 100vh; margin: 0; }
+body { overflow-x: clip; }
+img, video, canvas, svg { max-width: 100%; }
+button, input, select, textarea { max-width: 100%; }
+input, select, textarea { font-size: max(16px, 1em); }
+button, [role="button"], a { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--gold, #c8913a); outline-offset: 3px; }
+table { max-width: 100%; }
+pre { max-width: 100%; overflow-x: auto; }
+[class*="grid"], [class*="Grid"] { min-width: 0; }
+[class*="card"], [class*="Card"], [class*="panel"], [class*="Panel"] { min-width: 0; }
+@media (max-width: 900px) {
+  h1 { font-size: clamp(1.55rem, 4.5vw, 2.2rem) !important; line-height: 1.15; overflow-wrap: anywhere; }
+  h2 { overflow-wrap: anywhere; }
+  .admin-contenido { width: 100% !important; max-width: 100% !important; padding-left: 16px !important; padding-right: 16px !important; }
+  .admin-contenido > * { max-width: 100%; }
+  .admin-form-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .admin-contenido table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .admin-contenido img { max-width: 100%; height: auto; }
+}
+@media (max-width: 768px) {
+  /* Prevent dashboard content from sitting beneath the fixed mobile navigation. */
+  .admin-contenido { padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
+  .admin-sidebar { max-width: min(280px, 86vw) !important; }
+  .admin-nav-mobile { padding-bottom: env(safe-area-inset-bottom) !important; }
+  .admin-nav-mobile button, .admin-nav-mobile a { min-height: 48px; }
+  .admin-contenido button, .admin-contenido input, .admin-contenido select, .admin-contenido textarea { min-height: 40px; }
+  .hc-employee, .hc-kitchen, .hc-login, .mc { width: 100% !important; max-width: 100% !important; }
+  .hc-employee *, .hc-kitchen *, .hc-login *, .mc * { min-width: 0; }
+  .hc-employee button, .hc-kitchen button, .hc-login button, .mc button { min-height: 42px; }
+  .hc-employee input, .hc-employee select, .hc-employee textarea,
+  .hc-kitchen input, .hc-kitchen select, .hc-kitchen textarea,
+  .hc-login input, .hc-login select, .hc-login textarea { width: 100%; }
+  .hc-employee [style*="grid-template-columns"], .hc-kitchen [style*="grid-template-columns"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .hc-employee [style*="display: grid"], .hc-kitchen [style*="display: grid"] { min-width: 0; }
+  .mc .mc-list { grid-template-columns: minmax(0, 1fr) !important; }
+  .mc .mc-prod { max-width: 100%; }
+  .mc .mc-sticky { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .mc input, .mc select, .mc textarea { font-size: 16px; }
+}
+@media (max-width: 520px) {
+  body { font-size: 14px; }
+  .admin-contenido { padding: 14px 12px calc(90px + env(safe-area-inset-bottom)) !important; }
+  .admin-contenido > * { margin-left: 0 !important; margin-right: 0 !important; }
+  .admin-contenido button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .admin-contenido input, .admin-contenido select, .admin-contenido textarea { min-width: 0 !important; }
+  .admin-contenido .listaAdmin .listaItem { flex-wrap: wrap; gap: 10px; }
+  .admin-contenido .listaAdmin .listaItem > * { max-width: 100%; }
+  .hc-login { padding-left: 18px !important; padding-right: 18px !important; }
+  .hc-login h1 { font-size: clamp(30px, 9vw, 42px) !important; }
+  .hc-login form { width: 100%; }
+  .hc-employee .hc-order-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
+  .hc-employee .hc-order-action { width: 100%; min-width: 0 !important; padding-inline: 8px !important; }
+  .mc .mc-hero { min-height: 540px; }
+  .mc .mc-hero-copy h2 { font-size: clamp(38px, 11vw, 56px) !important; }
+  .mc .mc-prod { gap: 10px !important; padding: 10px !important; }
+  .mc .mc-prod-img { width: 88px !important; height: 88px !important; flex-basis: 88px !important; }
+  .mc .mc-prod-name { font-size: 17px !important; }
+  .mc .mc-sec { padding-left: 10px !important; padding-right: 10px !important; }
+  .mc .mc-head { max-width: calc(100% - 20px); }
+}
+@media (max-width: 360px) {
+  .admin-contenido { padding-left: 9px !important; padding-right: 9px !important; }
+  .hc-employee .hc-order-actions { grid-template-columns: minmax(0, 1fr) !important; }
+  .mc .mc-prod-img { width: 76px !important; height: 76px !important; flex-basis: 76px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
