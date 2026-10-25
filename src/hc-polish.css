@@ -62,33 +62,35 @@
   box-shadow:0 2px 7px rgba(0,0,0,.22);
   pointer-events:none;
 }
+.hc-qr-real-logo {
+  position:absolute;
+  left:-10px;
+  bottom:-10px;
+  width:38px;
+  height:38px;
+  display:block;
+  border:2px solid #fff;
+  border-radius:10px;
+  background-color:#fff;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:contain;
+  box-shadow:0 3px 10px rgba(0,0,0,.25);
+  pointer-events:none;
+  z-index:3;
+}
 .admin-contenido div:has(> svg[id^="qr-mesa-"]) + div { margin-top:2px; }
 
 /* The QR screen still has legacy print glyph characters in JSX; replace them visually with stable labels. */
-.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button {
-  font-size:0 !important;
-}
-.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button:first-child::after {
-  content:"SVG";
-  font-size:12px;
-  line-height:1;
-}
-.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button:last-child::after {
-  content:"Imprimir";
-  font-size:12px;
-  line-height:1;
-}
-.admin-contenido .seccionHeader:has(~ div svg[id^="qr-mesa-"]) button {
-  font-size:0 !important;
-}
-.admin-contenido .seccionHeader:has(~ div svg[id^="qr-mesa-"]) button::after {
-  content:"Imprimir todos";
-  font-size:13px;
-  line-height:1;
-}
+.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button { font-size:0 !important; }
+.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button:first-child::after { content:"SVG"; font-size:12px; line-height:1; }
+.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button:last-child::after { content:"Imprimir"; font-size:12px; line-height:1; }
+.admin-contenido .seccionHeader:has(~ div svg[id^="qr-mesa-"]) button { font-size:0 !important; }
+.admin-contenido .seccionHeader:has(~ div svg[id^="qr-mesa-"]) button::after { content:"Imprimir todos"; font-size:13px; line-height:1; }
 
 @media (max-width:640px) {
   .admin-contenido svg[id^="qr-mesa-"] { width:156px !important; height:156px !important; }
+  .hc-qr-real-logo { width:34px; height:34px; }
 }
 
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; } }
