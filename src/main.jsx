@@ -9,6 +9,7 @@ import "./hc-polish.css";
 import "./hcWorkflowBridge.js";
 import "./hcNoEmoji.js";
 import "./hcOrderRealtime.js";
+import "./hcQRRepair.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
