@@ -2,9 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import MenuCliente from "./pages/MenuCliente";
-import PantallaEmpleado from "./pages/PantallaEmpleado";
+import PantallaEmpleadoProfesional from "./pages/PantallaEmpleadoProfesional";
 import PantallaCocina from "./pages/PantallaCocina";
 import PanelDueno from "./pages/PanelDueno";
+import PanelComercial from "./pages/PanelComercial";
 
 const RutaProtegida = ({ children, roles }) => {
   const { usuario, cargando } = useAuth();
@@ -20,8 +21,9 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/menu" element={<MenuCliente />} />
-        <Route path="/empleado" element={<RutaProtegida roles={["EMPLEADO", "DUENO"]}><PantallaEmpleado /></RutaProtegida>} />
+        <Route path="/empleado" element={<RutaProtegida roles={["EMPLEADO", "DUENO"]}><PantallaEmpleadoProfesional /></RutaProtegida>} />
         <Route path="/cocina" element={<RutaProtegida roles={["COCINA", "DUENO", "EMPLEADO"]}><PantallaCocina /></RutaProtegida>} />
+        <Route path="/admin/comercial" element={<RutaProtegida roles={["DUENO"]}><PanelComercial /></RutaProtegida>} />
         <Route path="/admin/*" element={<RutaProtegida roles={["DUENO"]}><PanelDueno /></RutaProtegida>} />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
