@@ -271,3 +271,39 @@
   .mc-prod { padding: 13px 10px; border-radius: 14px; }
   .mc-search { margin-left: 10px; margin-right: 10px; }
 }
+
+
+/* Experiencia inmersiva HaceCafé: tonos cálidos, profundidad y scroll reveal. */
+.mc-hero { height: min(76vh, 680px); min-height: 510px; background: #160d08; isolation: isolate; }
+.mc-hero img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 56%; transform:scale(1.06); animation:mc-hero-drift 18s ease-in-out infinite alternate; }
+.mc-hero::after { background:linear-gradient(90deg,rgba(13,8,5,.92) 0%,rgba(20,10,5,.72) 38%,rgba(20,10,5,.1) 78%),linear-gradient(0deg,rgba(12,7,4,.62),transparent 55%); }
+.mc-hero-copy { position:absolute; z-index:2; top:50%; left:max(6vw,calc((100vw - 1180px)/2)); width:min(520px,82%); transform:translateY(-43%); color:#fff3e3; text-align:left; }
+.mc-eyebrow { display:block; color:#e8b96a; font-size:11px; font-weight:800; letter-spacing:.2em; margin-bottom:12px; }
+.mc-hero-copy h2 { font-family:Georgia,'Times New Roman',serif; color:#fffaf3; font-weight:400; font-size:clamp(42px,6vw,78px); line-height:.98; letter-spacing:-.045em; max-width:550px; }
+.mc-hero-copy h2 em { color:#e8b16c; font-weight:400; }
+.mc-hero-copy p { max-width:370px; margin-top:22px; color:#f2e8dc; font-size:clamp(14px,1.5vw,18px); line-height:1.6; }
+.mc-hero-cta { display:inline-flex; align-items:center; gap:22px; margin-top:26px; border:1px solid #f1c17d; border-radius:999px; padding:13px 24px; background:#edbb79; color:#211207!important; font-weight:900; letter-spacing:.08em; box-shadow:0 8px 30px rgba(0,0,0,.25); transition:transform .25s,box-shadow .25s; }
+.mc-hero-cta:hover { transform:translateY(-3px); box-shadow:0 12px 36px rgba(0,0,0,.35); }
+.mc-hero-notes { display:flex; flex-wrap:wrap; gap:18px; margin-top:34px; color:#f5d5a9; font-size:12px; }
+.mc-scroll-hint { position:absolute; z-index:2; bottom:16px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:8px; color:#f4d3a3; font-size:9px; letter-spacing:.22em; }
+.mc-scroll-hint i { display:block; width:1px; height:36px; background:linear-gradient(#edbb79,transparent); }
+.mc-head { background:color-mix(in srgb,var(--card) 88%,#29170b); }
+.mc-main { perspective:1100px; }
+.mc-reveal { opacity:0; transform:translateY(42px) rotateX(2deg); transform-origin:center top; transition:opacity .75s ease,transform .85s cubic-bezier(.2,.7,.2,1); }
+.mc-reveal.is-visible { opacity:1; transform:translateY(0) rotateX(0); }
+.mc-sec-title { margin-bottom:14px; }
+.mc-sec-title .mc-eyebrow { margin-bottom:4px; font-size:9px; }
+.mc-sec-title h2 { font-size:clamp(25px,3vw,34px); }
+.mc-prod { background:color-mix(in srgb,var(--card) 82%,#28180e); border:1px solid color-mix(in srgb,var(--borde) 75%,#b47b3b); border-radius:18px; margin:7px 0; padding:15px; transform-style:preserve-3d; }
+.mc-prod:hover { transform:translateY(-5px) rotateX(1deg); box-shadow:0 18px 34px rgba(0,0,0,.18); }
+.mc-prod-img { box-shadow:0 10px 25px rgba(0,0,0,.22); }
+.mc-sticky { border-color:color-mix(in srgb,var(--prim) 25%,var(--borde)); }
+@keyframes mc-hero-drift { from { transform:scale(1.06) translate3d(0,0,0); } to { transform:scale(1.13) translate3d(-1%,1%,0); } }
+@media (prefers-reduced-motion:reduce) { .mc-hero img { animation:none; transform:none; } .mc-reveal { opacity:1; transform:none; transition:none; } }
+@media (max-width:640px) {
+.mc-hero { min-height:570px; height:72svh; } .mc-hero img { object-position:60% center; }
+.mc-hero::after { background:linear-gradient(90deg,rgba(13,8,5,.84),rgba(20,10,5,.28)),linear-gradient(0deg,rgba(12,7,4,.65),transparent 65%); }
+.mc-hero-copy { left:22px; width:calc(100% - 44px); transform:translateY(-40%); }
+.mc-hero-copy h2 { font-size:clamp(43px,12vw,60px); } .mc-hero-notes { gap:10px; font-size:10px; }
+.mc-scroll-hint { left:auto; right:22px; transform:none; }
+}
