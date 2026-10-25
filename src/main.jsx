@@ -6,6 +6,7 @@ import { ThemeProvider } from "./context/ThemeContext.jsx";
 import "./theme.css";
 import "./App.css";
 import "./hc-polish.css";
+import "./responsive.css";
 import "./hcWorkflowBridge.js";
 import "./hcNoEmoji.js";
 import "./hcOrderRealtime.js";
