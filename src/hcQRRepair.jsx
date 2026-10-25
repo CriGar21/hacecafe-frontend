@@ -15,15 +15,13 @@ function dominioPublico() {
 
 function reparar() {
   document.querySelectorAll('svg[id^="qr-mesa-"]').forEach((oldSvg) => {
-    if (oldSvg.dataset.hcRepaired === "true") return;
+    const host = oldSvg.parentElement;
+    if (!host || host.dataset.hcQrRepaired === "true") return;
     const match = oldSvg.id.match(/^qr-mesa-(\d+)$/);
     if (!match) return;
     const mesa = match[1];
-    const host = oldSvg.parentElement;
-    if (!host) return;
-    oldSvg.dataset.hcRepaired = "true";
-    const root = createRoot(host);
-    root.render(
+    host.dataset.hcQrRepaired = "true";
+    createRoot(host).render(
       <QRCodeSVG
         id={`qr-mesa-${mesa}`}
         value={`${dominioPublico()}/menu?mesa=${mesa}`}
