@@ -161,7 +161,7 @@ export default function Ticket({
   });
 
   return (
-    <div
+    <div className="hc-ticket-backdrop"
       style={{
         position: "fixed",
         inset: 0,
@@ -174,7 +174,7 @@ export default function Ticket({
       }}
       onClick={onCerrar}
     >
-      <div
+      <div className="hc-ticket-modal"
         style={{
           background: "#1e1a14",
           border: "1px solid #3a3228",
