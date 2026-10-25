@@ -6,6 +6,9 @@ import { ThemeProvider } from "./context/ThemeContext.jsx";
 import "./theme.css";
 import "./App.css";
 import "./hc-polish.css";
+import { instalarMarcaQR } from "./qrBrandEnhancer.js";
+
+instalarMarcaQR();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
