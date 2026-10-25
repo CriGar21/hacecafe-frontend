@@ -182,3 +182,92 @@
     border-right-color: var(--border);
   }
 }
+
+/* HaceCafe menu — UX inspired by AstroPaper: restrained typography,
+   strong focus states, glassy navigation, responsive spacing and motion. */
+.mc-wrap {
+  animation: mc-page-in .35s ease both;
+}
+
+.mc-sticky {
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+.mc-search {
+  box-shadow: 0 4px 18px rgba(0,0,0,.06);
+}
+
+.mc-search:focus-within {
+  border-color: var(--prim) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--prim) 16%, transparent), 0 8px 24px rgba(0,0,0,.08);
+}
+
+.mc-prod {
+  position: relative;
+  border-radius: 16px;
+  margin: 3px 0;
+  padding: 16px;
+  transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.mc-prod:hover {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--card) 88%, var(--prim));
+  box-shadow: 0 10px 28px rgba(0,0,0,.08);
+}
+
+.mc-prod:focus-within,
+.mc-prod:focus-visible {
+  outline: 2px solid var(--prim);
+  outline-offset: 2px;
+}
+
+.mc-prod-img {
+  transition: transform .35s ease, filter .35s ease;
+}
+
+.mc-prod:hover .mc-prod-img {
+  transform: scale(1.035);
+}
+
+.mc-chip,
+.mc-cat-chip {
+  transition: transform .18s ease, background .18s ease, color .18s ease;
+}
+
+.mc-chip:hover,
+.mc-cat-chip:hover {
+  transform: translateY(-1px);
+}
+
+.mc-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.42) 100%);
+  pointer-events: none;
+}
+
+.mc-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes mc-page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-wrap,
+  .mc-prod,
+  .mc-prod-img,
+  .mc-chip,
+  .mc-cat-chip { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 640px) {
+  .mc-wrap { width: 100%; }
+  .mc-prod { padding: 13px 10px; border-radius: 14px; }
+  .mc-search { margin-left: 10px; margin-right: 10px; }
+}
