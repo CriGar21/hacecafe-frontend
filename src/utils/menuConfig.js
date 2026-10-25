@@ -20,9 +20,30 @@ export const CONFIG_DEFAULT = {
   colorPrimario: "#C8913A", colorFondo: "#0f0d0b", colorCard: "#1a1712", colorTexto: "#F0E6D3", fuenteId: "georgia",
 };
 
+function normalizarDominio(valor) {
+  const fallback = typeof window !== "undefined" ? window.location.origin : "";
+  const limpio = String(valor || "").trim().replace(/\/+$/, "");
+  if (!limpio) return fallback;
+  try {
+    const url = new URL(limpio);
+    if (!/^https?:$/.test(url.protocol)) return fallback;
+    const host = url.hostname.toLowerCase();
+    const esLocal = host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || /^192\.168\./.test(host) || /^10\./.test(host);
+    if (esLocal && fallback && !/localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(new URL(fallback).hostname)) return fallback;
+    return `${url.origin}${url.pathname.replace(/\/+$/, "")}`.replace(/\/$/, "") || url.origin;
+  } catch {
+    return fallback;
+  }
+}
+
+export function getDominioPublico(valor) {
+  return normalizarDominio(valor || (typeof localStorage !== "undefined" ? localStorage.getItem("rs_dominio") : ""));
+}
+
 function leerNegocioLocal() {
   const out = {};
   NEGOCIO_KEYS.forEach((key) => { const value = localStorage.getItem(key); if (value !== null) out[key] = value; });
+  if (out.rs_dominio) out.rs_dominio = normalizarDominio(out.rs_dominio);
   return out;
 }
 
@@ -45,7 +66,8 @@ function instalarSincronizacionNegocio() {
   const originalSetItem = Storage.prototype.setItem;
   if (!Storage.prototype.__haceCafeConfigPatch) {
     Storage.prototype.setItem = function (key, value) {
-      originalSetItem.call(this, key, value);
+      const nextValue = key === "rs_dominio" ? normalizarDominio(value) : value;
+      originalSetItem.call(this, key, nextValue);
       if (this === window.localStorage && NEGOCIO_KEYS.includes(key)) programarGuardadoNegocio();
     };
     Storage.prototype.__haceCafeConfigPatch = true;
@@ -59,7 +81,7 @@ function instalarSincronizacionNegocio() {
       if (!data || typeof data !== "object") return;
       negocioState.sincronizando = true;
       NEGOCIO_KEYS.forEach((key) => {
-        if (data[key] !== undefined && data[key] !== null) originalSetItem.call(localStorage, key, String(data[key]));
+        if (data[key] !== undefined && data[key] !== null) originalSetItem.call(localStorage, key, key === "rs_dominio" ? normalizarDominio(data[key]) : String(data[key]));
       });
       negocioState.sincronizando = false;
       window.dispatchEvent(new Event("config-negocio-sincronizada"));
