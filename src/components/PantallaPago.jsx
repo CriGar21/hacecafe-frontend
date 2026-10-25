@@ -36,9 +36,25 @@ export default function PantallaPago({
   };
 
   const copiar = async (texto, campo) => {
-    await navigator.clipboard.writeText(texto);
-    setCopiado(campo);
-    setTimeout(() => setCopiado(null), 2000);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(String(texto));
+      } else {
+        const temporal = document.createElement("textarea");
+        temporal.value = String(texto);
+        temporal.style.position = "fixed";
+        temporal.style.opacity = "0";
+        document.body.appendChild(temporal);
+        temporal.select();
+        const correcto = document.execCommand("copy");
+        temporal.remove();
+        if (!correcto) throw new Error("Copia no disponible");
+      }
+      setCopiado(campo);
+      setTimeout(() => setCopiado(null), 1800);
+    } catch {
+      alert("No se pudo copiar automáticamente. Seleccioná el dato y copialo manualmente.");
+    }
   };
 
   const confirmar = async () => {
