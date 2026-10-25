@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 const RAZON_SOCIAL_DEFAULT = {
   nombre: "HaceCafe",
@@ -11,10 +11,18 @@ const RAZON_SOCIAL_DEFAULT = {
 export default function Ticket({
   pedido,
   razonSocial = RAZON_SOCIAL_DEFAULT,
-  onCerrar,
+  onCerrar = () => {},
 }) {
   const ticketRef = useRef();
   const rs = { ...RAZON_SOCIAL_DEFAULT, ...razonSocial };
+
+  useEffect(() => {
+    const cerrarConEscape = (event) => {
+      if (event.key === "Escape") onCerrar?.();
+    };
+    window.addEventListener("keydown", cerrarConEscape);
+    return () => window.removeEventListener("keydown", cerrarConEscape);
+  }, [onCerrar]);
 
   const imprimir = () => {
     const contenido = ticketRef.current.innerHTML;
@@ -179,6 +187,9 @@ export default function Ticket({
           overflow: "hidden",
         }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Ticket del pedido ${pedido.numero}`}
       >
         {/* Toolbar */}
         <div
@@ -190,11 +201,15 @@ export default function Ticket({
             borderBottom: "1px solid #3a3228",
           }}
         >
-          <span
-            style={{ color: "#C8913A", fontWeight: "700", fontSize: "15px" }}
-          >
-            Ticket #{pedido.numero}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "11px", minWidth: 0 }}>
+            <div aria-hidden="true" style={{ width: "38px", height: "38px", flexShrink: 0, display: "grid", placeItems: "center", border: "1px solid rgba(228,177,111,.55)", borderRadius: "12px", background: "linear-gradient(145deg,#3c2617,#1b1009)", boxShadow: "0 5px 18px rgba(0,0,0,.24)" }}>
+              <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 12h17v8a7 7 0 0 1-7 7h-3a7 7 0 0 1-7-7v-8Z" stroke="#E8B96A" strokeWidth="1.6"/><path d="M24 14h2a3 3 0 0 1 0 6h-3M5 29h22M11 8c-2-2 2-3 0-5M17 8c-2-2 2-3 0-5" stroke="#E8B96A" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: "#F0E6D3", fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: "16px", letterSpacing: "-.02em" }}>HaceCafé</div>
+              <div style={{ color: "#C8913A", fontSize: "11px", letterSpacing: ".12em", textTransform: "uppercase" }}>Ticket #{pedido.numero}</div>
+            </div>
+          </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               style={{
@@ -238,8 +253,10 @@ export default function Ticket({
                 fontSize: "15px",
               }}
               onClick={onCerrar}
+              aria-label="Cerrar ticket"
+              title="Cerrar ticket"
             >
-              ✕
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
             </button>
           </div>
         </div>
@@ -275,6 +292,7 @@ export default function Ticket({
                 marginBottom: "4px",
               }}
             >
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}><svg width="42" height="42" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Logo HaceCafé"><path d="M7 12h17v8a7 7 0 0 1-7 7h-3a7 7 0 0 1-7-7v-8Z" stroke="#5B3B24" strokeWidth="1.6"/><path d="M24 14h2a3 3 0 0 1 0 6h-3M5 29h22M11 8c-2-2 2-3 0-5M17 8c-2-2 2-3 0-5" stroke="#5B3B24" strokeWidth="1.6" strokeLinecap="round"/></svg></div>
               {rs.nombre}
             </div>
             <div
