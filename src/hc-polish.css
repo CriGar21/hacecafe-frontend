@@ -1,6 +1,6 @@
 /* HaceCafe cross-system polish: no platform emoji dependency. */
 
-/* Category rows: hide legacy emoji glyphs and render a stable CSS/SVG-style brand mark. */
+/* Category rows: never render the stored legacy icon/emoji. Show a neutral CSS brand mark instead. */
 .admin-contenido .listaAdmin .listaItem > div:first-child span[style*="font-size:22px"] {
   display:grid !important;
   place-items:center;
@@ -19,96 +19,26 @@
 }
 .admin-contenido .listaAdmin .listaItem > div:first-child span[style*="font-size:22px"]::before {
   content:"";
-  width:16px;
-  height:16px;
+  width:15px;
+  height:15px;
   display:block;
-  border:1.7px solid currentColor;
-  border-radius:5px;
-  color:#e4b16f;
-  box-shadow:5px 0 0 -3px #24170f, 0 5px 0 -3px #24170f;
+  border:1.7px solid #e4b16f;
+  border-radius:4px;
   transform:rotate(45deg) scale(.82);
+  box-shadow:inset 0 0 0 3px rgba(228,177,111,.07);
 }
 
-/* QR cards: crisp SVG rendering, generous quiet zone and a branded HC badge OUTSIDE the code. */
+/* Keep QR cards visually clean and close to the original design. The QR itself remains untouched. */
 .admin-contenido svg[id^="qr-mesa-"] {
   display:block;
-  width:170px !important;
-  height:170px !important;
+  width:140px !important;
+  height:140px !important;
   max-width:100%;
   shape-rendering:crispEdges;
 }
-.admin-contenido div:has(> svg[id^="qr-mesa-"]) {
-  position:relative;
-  padding:24px !important;
-  border:1px solid rgba(228,177,111,.22);
-  box-shadow:0 12px 28px rgba(0,0,0,.22);
-  overflow:visible;
-}
-.admin-contenido div:has(> svg[id^="qr-mesa-"])::after {
-  content:"HC";
-  position:absolute;
-  top:-10px;
-  right:-10px;
-  width:24px;
-  height:24px;
-  display:grid;
-  place-items:center;
-  border:2px solid #fff;
-  border-radius:7px;
-  background:#c8913a;
-  color:#21170d;
-  font:900 8px/1 Arial,sans-serif;
-  letter-spacing:-.04em;
-  box-shadow:0 2px 7px rgba(0,0,0,.22);
-  pointer-events:none;
-}
-.hc-qr-real-logo {
-  position:absolute;
-  left:-10px;
-  bottom:-10px;
-  width:38px;
-  height:38px;
-  display:block;
-  border:2px solid #fff;
-  border-radius:10px;
-  background-color:#fff;
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:contain;
-  box-shadow:0 3px 10px rgba(0,0,0,.25);
-  pointer-events:none;
-  z-index:3;
-}
-.hc-qr-test {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  align-self:center;
-  min-height:30px;
-  margin:2px auto 0;
-  padding:6px 11px;
-  border:1px solid rgba(228,177,111,.25);
-  border-radius:8px;
-  color:#e8c58f;
-  background:rgba(228,177,111,.07);
-  font:700 10px/1 Arial,sans-serif;
-  text-decoration:none;
-  transition:transform .16s ease,background .16s ease,border-color .16s ease;
-}
-.hc-qr-test:hover { transform:translateY(-1px); background:rgba(228,177,111,.13); border-color:rgba(228,177,111,.5); }
-.hc-qr-test[data-local="true"] { color:#e7a48f; border-color:rgba(231,164,143,.28); }
-.admin-contenido div:has(> svg[id^="qr-mesa-"]) + div { margin-top:2px; }
-
-/* The QR screen still has legacy print glyph characters in JSX; replace them visually with stable labels. */
-.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button { font-size:0 !important; }
-.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button:first-child::after { content:"SVG"; font-size:12px; line-height:1; }
-.admin-contenido div:has(> svg[id^="qr-mesa-"]) ~ div button:last-child::after { content:"Imprimir"; font-size:12px; line-height:1; }
-.admin-contenido .seccionHeader:has(~ div svg[id^="qr-mesa-"]) button { font-size:0 !important; }
-.admin-contenido .seccionHeader:has(~ div svg[id^="qr-mesa-"]) button::after { content:"Imprimir todos"; font-size:13px; line-height:1; }
 
 @media (max-width:640px) {
-  .admin-contenido svg[id^="qr-mesa-"] { width:156px !important; height:156px !important; }
-  .hc-qr-real-logo { width:34px; height:34px; }
+  .admin-contenido svg[id^="qr-mesa-"] { width:140px !important; height:140px !important; }
 }
 
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; } }
