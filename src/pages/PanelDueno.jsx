@@ -700,155 +700,170 @@ function Apariencia({ tema }) {
   const s = getStyles(tema);
   const [cfg, setCfg] = useState(leerConfig);
   const [guardado, setGuardado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [errorGuardar, setErrorGuardar] = useState("");
 
-  const set = (key, val) => setCfg(prev => ({ ...prev, [key]: val }));
+  const set = (key, val) => {
+    setCfg(prev => ({ ...prev, [key]: val }));
+    setGuardado(false);
+    setErrorGuardar("");
+  };
 
-  const guardar = () => {
-    guardarConfig(cfg);
-    // Dispara el evento storage para que MenuCliente se actualice en tiempo real
-    window.dispatchEvent(new Event("storage"));
-    setGuardado(true);
-    setTimeout(() => setGuardado(false), 2000);
+  const presets = [
+    { id:"espresso", nombre:"Espresso", descripcion:"Oscuro y elegante", colors:["#C8913A","#0f0d0b","#1a1712","#F0E6D3"], values:{colorPrimario:"#C8913A",colorFondo:"#0f0d0b",colorCard:"#1a1712",colorTexto:"#F0E6D3"} },
+    { id:"crema", nombre:"Crema", descripcion:"Claro y cálido", colors:["#8B5E3C","#F7F0E4","#FFF9F0","#34271D"], values:{colorPrimario:"#8B5E3C",colorFondo:"#F7F0E4",colorCard:"#FFF9F0",colorTexto:"#34271D"} },
+    { id:"oliva", nombre:"Oliva", descripcion:"Natural y artesanal", colors:["#71804A","#F1F0E5","#E4E5D4","#283020"], values:{colorPrimario:"#71804A",colorFondo:"#F1F0E5",colorCard:"#E4E5D4",colorTexto:"#283020"} },
+    { id:"vino", nombre:"Vino", descripcion:"Intenso y sofisticado", colors:["#C77B83","#211419","#302027","#F8E9E8"], values:{colorPrimario:"#C77B83",colorFondo:"#211419",colorCard:"#302027",colorTexto:"#F8E9E8"} },
+    { id:"marino", nombre:"Azul noche", descripcion:"Moderno y sobrio", colors:["#79B7C9","#101B24","#192934","#E7F1F4"], values:{colorPrimario:"#79B7C9",colorFondo:"#101B24",colorCard:"#192934",colorTexto:"#E7F1F4"} },
+  ];
+
+  const aplicarPreset = (preset) => {
+    setCfg(prev => ({ ...prev, ...preset.values }));
+    setGuardado(false);
+    setErrorGuardar("");
+  };
+
+  const guardar = async () => {
+    setGuardando(true);
+    setErrorGuardar("");
+    try {
+      await guardarConfig(cfg);
+      window.dispatchEvent(new Event("storage"));
+      setGuardado(true);
+    } catch (e) {
+      setErrorGuardar(e.message || "No se pudieron guardar los cambios. Revisá la conexión e intentá nuevamente.");
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const resetear = () => {
-    if (!confirm("¿Resetear la apariencia a los valores por defecto?")) return;
-    localStorage.removeItem("menu_apariencia");
-    const { CONFIG_DEFAULT } = require ? { CONFIG_DEFAULT: leerConfig() } : { CONFIG_DEFAULT: leerConfig() };
-    setCfg(leerConfig());
-    window.dispatchEvent(new Event("storage"));
+    if (!confirm("¿Restablecer la apariencia a los valores originales?")) return;
+    const defaults = { ...leerConfig(), nombre:"HaceCafe", subtitulo:"Gastronomía artesanal", bienvenida:"", logoUrl:"", heroBgUrl:"", colorPrimario:"#C8913A", colorFondo:"#0f0d0b", colorCard:"#1a1712", colorTexto:"#F0E6D3", fuenteId:"georgia" };
+    setCfg(defaults);
+    setGuardado(false);
+    setErrorGuardar("");
   };
 
-  // Preview mini del menú
   const previewBg = cfg.colorFondo || "#0f0d0b";
   const previewGold = cfg.colorPrimario || "#C8913A";
   const previewText = cfg.colorTexto || "#F0E6D3";
   const previewCard = cfg.colorCard || "#1a1712";
   const fuente = FUENTES_DISPONIBLES.find(f => f.id === cfg.fuenteId)?.css || FUENTES_DISPONIBLES[0].css;
+  const presetActivo = presets.find(p => Object.entries(p.values).every(([key,value]) => cfg[key]?.toLowerCase() === value.toLowerCase()))?.id;
 
   return (
-    <div style={s.seccion}>
-      <div style={s.seccionHeader}>
-        <h2 style={s.seccionTitulo}>Apariencia del menú</h2>
-        <div style={{ display:"flex", gap:"8px" }}>
-          <button style={s.btnSecundario} onClick={resetear}>Resetear</button>
-          <button style={s.btnPrimario} onClick={guardar}>{guardado ? "✓ Guardado" : "Guardar cambios"}</button>
+    <div className="hc-appearance">
+      <header className="hc-appearance-hero">
+        <div>
+          <span className="hc-appearance-eyebrow">PERSONALIZACIÓN DEL MENÚ</span>
+          <h2>Apariencia de tu local</h2>
+          <p>Diseñá una carta digital que represente tu marca. Los cambios se reflejan en la vista previa antes de publicarlos.</p>
         </div>
-      </div>
+        <div className="hc-appearance-top-actions">
+          <button className="hc-appearance-reset" onClick={resetear}>Restablecer</button>
+          <button className="hc-appearance-save" onClick={guardar} disabled={guardando}>{guardando ? "Guardando…" : guardado ? "✓ Cambios guardados" : "Publicar cambios"}</button>
+        </div>
+      </header>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:"1rem", alignItems:"start" }}>
-
-        {/* ── Formulario ── */}
-        <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
-
-          {/* Identidad */}
-          <div style={s.card}>
-            <h3 style={s.cardTitulo}>Identidad del local</h3>
-            <div style={s.formGrupo}><label style={s.formLabel}>Nombre del local</label><input style={s.formInput} value={cfg.nombre} onChange={e => set("nombre", e.target.value)} placeholder="HaceCafe" /></div>
-            <div style={s.formGrupo}><label style={s.formLabel}>Subtítulo</label><input style={s.formInput} value={cfg.subtitulo} onChange={e => set("subtitulo", e.target.value)} placeholder="Gastronomía Artesanal" /></div>
-            <div style={s.formGrupo}><label style={s.formLabel}>Frase de bienvenida (opcional)</label><textarea style={{ ...s.formInput, resize:"none" }} rows={2} value={cfg.bienvenida} onChange={e => set("bienvenida", e.target.value)} placeholder="Bienvenidos a nuestro local..." /></div>
-          </div>
-
-          {/* Imágenes */}
-          <div style={s.card}>
-            <h3 style={s.cardTitulo}>Imágenes</h3>
-            <div style={s.formGrupo}>
-              <label style={s.formLabel}>Logo del local</label>
-              <ImageUploader value={cfg.logoUrl} onChange={url => set("logoUrl", url)} />
-              <span style={{ fontSize:"11px", color:tema.textFaded }}>Se muestra en el hero del menú. Recomendado: fondo transparente (PNG).</span>
+      <div className="hc-appearance-workspace">
+        <div className="hc-appearance-controls">
+          <section className="hc-appearance-panel">
+            <div className="hc-appearance-panel-heading"><span className="hc-appearance-step">01</span><div><h3>Elegí un estilo</h3><p>Empezá con una paleta y personalizala a tu gusto.</p></div></div>
+            <div className="hc-appearance-presets">
+              {presets.map(p => <button type="button" key={p.id} className={`hc-appearance-preset ${presetActivo===p.id?"is-active":""}`} onClick={() => aplicarPreset(p)} aria-pressed={presetActivo===p.id}>
+                <span className="hc-appearance-swatch-row">{p.colors.map(color=><i key={color} style={{background:color}} />)}</span>
+                <strong>{p.nombre}</strong><small>{p.descripcion}</small>
+              </button>)}
             </div>
-            <div style={s.formGrupo}>
-              <label style={s.formLabel}>Imagen de fondo del hero</label>
-              <ImageUploader value={cfg.heroBgUrl} onChange={url => set("heroBgUrl", url)} />
-              <span style={{ fontSize:"11px", color:tema.textFaded }}>Foto del local, plato estrella, etc. Se oscurece automáticamente para mantener la legibilidad.</span>
-            </div>
-          </div>
+          </section>
 
-          {/* Colores */}
-          <div style={s.card}>
-            <h3 style={s.cardTitulo}>Colores</h3>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px" }}>
+          <section className="hc-appearance-panel">
+            <div className="hc-appearance-panel-heading"><span className="hc-appearance-step">02</span><div><h3>Identidad de tu negocio</h3><p>El nombre y los textos que verán tus clientes.</p></div></div>
+            <div className="hc-appearance-form-grid">
+              <label className="hc-appearance-field"><span>Nombre del local</span><input value={cfg.nombre || ""} onChange={e=>set("nombre",e.target.value)} placeholder="Ej. HaceCafe" maxLength={60}/></label>
+              <label className="hc-appearance-field"><span>Subtítulo</span><input value={cfg.subtitulo || ""} onChange={e=>set("subtitulo",e.target.value)} placeholder="Café de especialidad" maxLength={90}/></label>
+              <label className="hc-appearance-field hc-appearance-field-wide"><span>Mensaje de bienvenida <small>Opcional</small></span><textarea value={cfg.bienvenida || ""} onChange={e=>set("bienvenida",e.target.value)} placeholder="Un buen café, un buen momento…" rows={3} maxLength={220}/><small>{(cfg.bienvenida||"").length}/220 caracteres</small></label>
+            </div>
+          </section>
+
+          <section className="hc-appearance-panel">
+            <div className="hc-appearance-panel-heading"><span className="hc-appearance-step">03</span><div><h3>Colores de marca</h3><p>Elegí los tonos exactos y comprobá cómo conviven entre sí.</p></div></div>
+            <div className="hc-appearance-colors">
               {[
-                { key:"colorPrimario", label:"Color primario", hint:"Botones, precios, acentos" },
-                { key:"colorFondo",    label:"Color de fondo",  hint:"Fondo general de la página" },
-                { key:"colorCard",     label:"Color de tarjetas", hint:"Fondo de cards y modales" },
-                { key:"colorTexto",    label:"Color de texto",  hint:"Texto principal" },
-              ].map(({ key, label, hint }) => (
-                <div key={key} style={s.formGrupo}>
-                  <label style={s.formLabel}>{label}</label>
-                  <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-                    <input type="color" value={cfg[key]} onChange={e => set(key, e.target.value)}
-                      style={{ width:"40px", height:"40px", borderRadius:"8px", border:`1px solid ${tema.borderFaded}`, cursor:"pointer", padding:"2px", background:"transparent" }} />
-                    <input style={{ ...s.formInput, flex:1, fontFamily:"monospace", fontSize:"13px" }} value={cfg[key]} onChange={e => set(key, e.target.value)} placeholder="#000000" />
-                  </div>
-                  <span style={{ fontSize:"11px", color:tema.textFaded }}>{hint}</span>
-                </div>
-              ))}
+                {key:"colorPrimario",label:"Color de acento",hint:"Botones, precios y detalles"},
+                {key:"colorFondo",label:"Fondo del menú",hint:"Fondo general de la carta"},
+                {key:"colorCard",label:"Tarjetas",hint:"Productos y superficies"},
+                {key:"colorTexto",label:"Texto principal",hint:"Títulos y descripciones"},
+              ].map(({key,label,hint})=><div className="hc-appearance-color-field" key={key}>
+                <div className="hc-appearance-color-head"><span className="hc-appearance-color-dot" style={{background:/^#[0-9a-f]{6}$/i.test(cfg[key]||"")?cfg[key]:"#888"}}/><div><strong>{label}</strong><small>{hint}</small></div></div>
+                <div className="hc-appearance-color-inputs"><input aria-label={label+" selector de color"} type="color" value={/^#[0-9a-f]{6}$/i.test(cfg[key]||"")?cfg[key]:"#888888"} onChange={e=>set(key,e.target.value)}/><input aria-label={label+" código hexadecimal"} value={cfg[key]||""} onChange={e=>set(key,e.target.value)} pattern="^#[0-9a-fA-F]{6}$" maxLength={7}/></div>
+              </div>)}
             </div>
-          </div>
+          </section>
 
-          {/* Fuente */}
-          <div style={s.card}>
-            <h3 style={s.cardTitulo}>Tipografía</h3>
-            <div style={s.formGrupo}>
-              <label style={s.formLabel}>Fuente principal</label>
-              <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-                {FUENTES_DISPONIBLES.map(f => (
-                  <button key={f.id} onClick={() => set("fuenteId", f.id)}
-                    style={{ padding:"12px 16px", borderRadius:"10px", border:`2px solid ${cfg.fuenteId===f.id ? tema.accent : tema.borderFaded}`, background: cfg.fuenteId===f.id ? `${tema.accent}18` : "transparent", cursor:"pointer", textAlign:"left", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                    <span style={{ fontFamily:f.css, fontSize:"16px", color:tema.text }}>{f.label}</span>
-                    <span style={{ fontFamily:f.css, fontSize:"13px", color:tema.textFaded }}>Menú Carta 2024</span>
-                  </button>
-                ))}
-              </div>
+          <section className="hc-appearance-panel">
+            <div className="hc-appearance-panel-heading"><span className="hc-appearance-step">04</span><div><h3>Logo e imagen de portada</h3><p>Sumá imágenes propias para que el menú sea reconocible.</p></div></div>
+            <div className="hc-appearance-media-grid">
+              <div className="hc-appearance-media-field"><div><strong>Logo del local</strong><p>Ideal en PNG con fondo transparente.</p></div><ImageUploader value={cfg.logoUrl} onChange={url=>set("logoUrl",url)}/></div>
+              <div className="hc-appearance-media-field"><div><strong>Imagen de portada</strong><p>Una foto del local o de tu producto estrella.</p></div><ImageUploader value={cfg.heroBgUrl} onChange={url=>set("heroBgUrl",url)}/></div>
             </div>
-          </div>
+          </section>
+
+          <section className="hc-appearance-panel">
+            <div className="hc-appearance-panel-heading"><span className="hc-appearance-step">05</span><div><h3>Tipografía</h3><p>Elegí el carácter de los títulos y textos del menú.</p></div></div>
+            <div className="hc-appearance-fonts">
+              {FUENTES_DISPONIBLES.map(f=><button type="button" key={f.id} onClick={()=>set("fuenteId",f.id)} className={`hc-appearance-font ${cfg.fuenteId===f.id?"is-active":""}`} aria-pressed={cfg.fuenteId===f.id}>
+                <span style={{fontFamily:f.css}}>Ag</span><span><strong>{f.label}</strong><small style={{fontFamily:f.css}}>Café de especialidad</small></span><i className="hc-appearance-radio"/>
+              </button>)}
+            </div>
+          </section>
         </div>
 
-        {/* ── Preview ── */}
-        <div style={{ position:"sticky", top:"1rem" }}>
-          <div style={{ ...s.card, padding:0, overflow:"hidden" }}>
-            <div style={{ padding:"10px 14px", borderBottom:`1px solid ${tema.borderFaded}`, fontSize:"12px", fontWeight:"700", color:tema.textFaded, letterSpacing:"1px" }}>PREVIEW</div>
-            {/* Mini hero */}
-            <div style={{ position:"relative", height:"120px", background: cfg.heroBgUrl ? `url(${cfg.heroBgUrl}) center/cover` : `radial-gradient(ellipse at 30% 50%, ${lightenHex(previewBg, 0.15)} 0%, ${previewBg} 65%)`, overflow:"hidden", display:"flex", alignItems:"flex-end" }}>
-              <div style={{ position:"absolute", inset:0, background:`linear-gradient(to top, ${previewBg} 0%, transparent 100%)` }} />
-              <div style={{ position:"relative", zIndex:2, padding:"0 12px 12px" }}>
-                {cfg.logoUrl && <img src={cfg.logoUrl} alt="logo" style={{ height:"24px", marginBottom:"4px", objectFit:"contain", display:"block" }} />}
-                <div style={{ fontFamily:fuente, fontSize:"18px", fontWeight:"700", color:previewText, lineHeight:1 }}>{cfg.nombre || "Mi Local"}</div>
-                {cfg.subtitulo && <div style={{ fontFamily:fuente, fontSize:"9px", color:previewGold, letterSpacing:"3px", textTransform:"uppercase", opacity:0.8 }}>{cfg.subtitulo}</div>}
+        <aside className="hc-appearance-preview-wrap">
+          <div className="hc-appearance-preview-sticky">
+            <div className="hc-appearance-preview-label"><span><i/>VISTA PREVIA EN VIVO</span><small>Se actualiza al editar</small></div>
+            <div className="hc-appearance-device">
+              <div className="hc-appearance-device-top"><span/><span/><span/><small>vista del cliente</small></div>
+              <div className="hc-appearance-live" style={{background:previewBg,color:previewText,fontFamily:fuente}}>
+                <div className="hc-appearance-live-hero" style={{background:cfg.heroBgUrl? `linear-gradient(0deg,${previewBg} 0%,rgba(0,0,0,.18) 100%),url("${cfg.heroBgUrl}") center/cover`:`radial-gradient(ellipse at 15% 0%,${lightenHex(previewBg,.16)},${previewBg} 72%)`}}>
+                  {cfg.logoUrl ? <img className="hc-appearance-live-logo" src={cfg.logoUrl} alt="Vista previa del logo"/> : <div className="hc-appearance-logo-placeholder" style={{borderColor:previewGold,color:previewGold}}>HC</div>}
+                  <span className="hc-appearance-live-kicker" style={{color:previewGold}}>CAFÉ · CARTA DIGITAL</span>
+                  <h3>{cfg.nombre || "Nombre de tu local"}</h3>
+                  <p>{cfg.subtitulo || "Tu mejor momento del día"}</p>
+                </div>
+                {cfg.bienvenida && <p className="hc-appearance-live-welcome">{cfg.bienvenida}</p>}
+                <div className="hc-appearance-live-categories"><span style={{background:previewGold,color:textoSobreColor(previewGold)}}>Todo</span><span>Cafés</span><span>Pastelería</span></div>
+                <div className="hc-appearance-live-products">
+                  {[
+                    {name:"Café con leche",desc:"Espresso y leche cremosa",price:"$2.400",initial:"C"},
+                    {name:"Medialunas",desc:"Recién horneadas",price:"$1.500",initial:"M"},
+                    {name:"Tostado clásico",desc:"Jamón y queso",price:"$3.200",initial:"T"},
+                    {name:"Limonada",desc:"Natural y fresca",price:"$1.800",initial:"L"},
+                  ].map((p,i)=><article key={p.name} style={{background:previewCard,borderColor:previewGold+"35"}}>
+                    <div className="hc-appearance-product-art" style={{background:lightenHex(previewCard,.07),color:previewGold}}>{p.initial}</div>
+                    <div className="hc-appearance-product-copy"><strong>{p.name}</strong><small>{p.desc}</small><b style={{color:previewGold}}>{p.price}</b></div>
+                  </article>)}
+                </div>
+                <div className="hc-appearance-live-cart" style={{background:previewGold,color:textoSobreColor(previewGold)}}><span className="hc-appearance-cart-count">2</span><strong>Ver mi pedido</strong><b>$3.900</b></div>
               </div>
             </div>
-            {/* Mini categorías */}
-            <div style={{ background:previewBg, padding:"8px 10px", display:"flex", gap:"4px", borderBottom:`1px solid ${previewGold}20` }}>
-              {["Cafés","Comidas","Bebidas"].map((c,i) => (
-                <div key={c} style={{ padding:"4px 10px", borderRadius:"20px", fontSize:"10px", fontWeight:"600", background:i===0?previewGold:"transparent", color:i===0?previewBg:`${previewText}60` }}>{c}</div>
-              ))}
-            </div>
-            {/* Mini productos */}
-            <div style={{ background:previewBg, padding:"8px 10px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6px" }}>
-              {["Café con leche","Medialunas","Tostado","Jugo"].map((nombre, i) => (
-                <div key={nombre} style={{ background:previewCard, borderRadius:"8px", overflow:"hidden", border:`1px solid ${previewGold}15` }}>
-                  <div style={{ height:"44px", background:`${lightenHex(previewBg, 0.1)}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px" }}>{["C","M","T","J"][i]}</div>
-                  <div style={{ padding:"5px 6px" }}>
-                    <div style={{ fontFamily:fuente, fontSize:"9px", fontWeight:"700", color:previewText, lineHeight:1.2 }}>{nombre}</div>
-                    <div style={{ fontFamily:fuente, fontSize:"10px", fontWeight:"800", color:previewGold, marginTop:"2px" }}>$1.500</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {/* Mini carrito */}
-            <div style={{ margin:"8px 10px 10px", background:previewGold, borderRadius:"20px", padding:"8px 12px", display:"flex", alignItems:"center", gap:"8px" }}>
-              <div style={{ background:previewBg, borderRadius:"50%", width:"18px", height:"18px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"9px", fontWeight:"900", color:previewGold }}>2</div>
-              <span style={{ flex:1, fontSize:"10px", fontWeight:"700", color:previewBg, fontFamily:fuente }}>Ver mi pedido</span>
-              <span style={{ fontSize:"11px", fontWeight:"900", color:previewBg, fontFamily:fuente }}>$3.000</span>
-            </div>
+            <div className="hc-appearance-preview-note"><span className="hc-appearance-note-check">✓</span><p><strong>Así lo verán tus clientes</strong><br/>La vista previa es ilustrativa. Publicá los cambios para aplicarlos al menú real.</p></div>
           </div>
-        </div>
+        </aside>
       </div>
-
-      <button style={{ ...s.btnPrimario, alignSelf:"flex-start" }} onClick={guardar}>{guardado ? "✓ Guardado" : "Guardar cambios"}</button>
+      {errorGuardar && <div className="hc-appearance-feedback is-error" role="alert">{errorGuardar}</div>}
+      {guardado && <div className="hc-appearance-feedback is-success" role="status">✓ Tu apariencia quedó guardada y publicada.</div>}
+      <div className="hc-appearance-bottom-actions"><button className="hc-appearance-reset" onClick={resetear}>Restablecer valores</button><button className="hc-appearance-save" onClick={guardar} disabled={guardando}>{guardando?"Guardando…":guardado?"✓ Cambios guardados":"Publicar cambios"}</button></div>
     </div>
   );
+}
+
+function textoSobreColor(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex || "")) return "#ffffff";
+  const rgb = [1,3,5].map(i => parseInt(hex.slice(i,i+2),16));
+  const luminancia = rgb.map(v => { const c=v/255; return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4); }).reduce((sum,v,i)=>sum+v*[0.2126,0.7152,0.0722][i],0);
+  return luminancia > 0.45 ? "#21170f" : "#ffffff";
 }
 
 function lightenHex(hex, amount) {
