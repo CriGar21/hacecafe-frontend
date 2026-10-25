@@ -46,28 +46,43 @@ function enhanceOwnerUi() {
     }
   });
 
-  /* Existing category cards may contain old emoji values from the database. */
   content.querySelectorAll("div").forEach((node) => {
     const value = node.textContent?.trim() || "";
     if (!/^Orden:\s*\d+$/.test(value)) return;
     const info = node.parentElement?.parentElement;
+    const outer = info?.parentElement;
     const name = info?.querySelector("div")?.textContent || "";
     const icon = info?.querySelector("span");
     if (!icon || !name || icon.dataset.hcIconReady === "1") return;
     icon.dataset.hcIconReady = "1"; icon.textContent = iconForLabel(name); icon.classList.add("hc-category-icon"); icon.setAttribute("aria-hidden", "true");
+    if (outer) {
+      outer.classList.add("hc-category-card");
+      const actions = outer.lastElementChild;
+      if (actions) actions.classList.add("hc-category-actions");
+    }
   });
+
+  const headings = Array.from(content.querySelectorAll("h2"));
+  const catHeading = headings.find(h => h.textContent.trim().startsWith("Categorías"));
+  if (catHeading?.parentElement) catHeading.parentElement.classList.add("hc-owner-section-header");
+  const qrHeading = headings.find(h => h.textContent.trim().startsWith("QR por mesa"));
+  if (qrHeading?.parentElement) qrHeading.parentElement.classList.add("hc-qr-hero");
 
   const cfg = (() => { try { return JSON.parse(localStorage.getItem("menu_apariencia") || "{}"); } catch { return {}; } })();
   const logo = cfg.logoUrl || "";
   content.querySelectorAll("svg[id^='qr-mesa-']").forEach((svg) => {
     const qrBox = svg.parentElement;
-    if (!qrBox || qrBox.dataset.hcQrReady === "1") return;
+    if (!qrBox) return;
+    const card = qrBox.parentElement;
+    const grid = card?.parentElement;
+    if (grid) grid.classList.add("hc-qr-grid");
+    if (qrBox.dataset.hcQrReady === "1") return;
     qrBox.dataset.hcQrReady = "1"; qrBox.classList.add("hc-qr-code");
     const badge = document.createElement("span"); badge.setAttribute("aria-label", "Marca del local");
     badge.style.cssText = "position:absolute;right:7px;top:7px;width:34px;height:34px;padding:4px;display:grid;place-items:center;border:2px solid #fff;border-radius:9px;background:#17100b;color:#e4b16f;font:900 9px Georgia,serif;box-shadow:0 4px 10px rgba(0,0,0,.22);z-index:2;pointer-events:none";
     if (logo) { const img=document.createElement("img"); img.src=logo; img.alt=""; img.style.cssText="width:100%;height:100%;object-fit:contain;border-radius:5px"; badge.appendChild(img); } else badge.textContent="HC";
     qrBox.appendChild(badge);
-    const card = qrBox.parentElement?.parentElement; if (card) card.classList.add("hc-qr-card");
+    if (card) card.classList.add("hc-qr-card");
   });
 
   content.querySelectorAll("button").forEach((button) => { if (button.textContent.includes("🖨")) addPrintIcon(button); });
@@ -76,11 +91,6 @@ function enhanceOwnerUi() {
 export default function SelectorTema({ style = {} }) {
   const { temaActual, cambiarTema } = useTema();
   useEffect(() => { const run=()=>enhanceOwnerUi(); run(); const observer=new MutationObserver(run); observer.observe(document.body,{childList:true,subtree:true}); return()=>observer.disconnect(); }, []);
-
   const coloresBotones = { oscuro:{bg:"#1a1612",ring:"#C8913A"}, natural:{bg:"#445925",ring:"#BC6849"} };
-  return (
-    <div style={{display:"flex",gap:"6px",alignItems:"center",...style}}>
-      {Object.keys(TEMAS).map((key)=>{ const activo=temaActual===key; const {bg,ring}=coloresBotones[key]; return <button key={key} title={TEMAS[key].nombre} onClick={()=>cambiarTema(key)} style={{width:"22px",height:"22px",borderRadius:"50%",border:activo?`3px solid ${ring}`:"2px solid rgba(128,128,128,0.4)",background:bg,cursor:"pointer",padding:0,transition:"all 0.2s",boxShadow:activo?`0 0 0 2px ${ring}60`:"none",flexShrink:0}}/>; })}
-    </div>
-  );
+  return <div style={{display:"flex",gap:"6px",alignItems:"center",...style}}>{Object.keys(TEMAS).map((key)=>{const activo=temaActual===key;const {bg,ring}=coloresBotones[key];return <button key={key} title={TEMAS[key].nombre} onClick={()=>cambiarTema(key)} style={{width:"22px",height:"22px",borderRadius:"50%",border:activo?`3px solid ${ring}`:"2px solid rgba(128,128,128,0.4)",background:bg,cursor:"pointer",padding:0,transition:"all 0.2s",boxShadow:activo?`0 0 0 2px ${ring}60`:"none",flexShrink:0}}/>;})}</div>;
 }
