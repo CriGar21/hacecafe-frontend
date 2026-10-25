@@ -8,10 +8,7 @@ import PanelDueno from "./pages/PanelDueno";
 
 const RutaProtegida = ({ children, roles }) => {
   const { usuario, cargando } = useAuth();
-  if (cargando)
-    return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>Cargando...</div>
-    );
+  if (cargando) return <div style={{ padding: "2rem", textAlign: "center" }}>Cargando...</div>;
   if (!usuario) return <Navigate to="/login" />;
   if (roles && !roles.includes(usuario.rol)) return <Navigate to="/login" />;
   return children;
@@ -23,30 +20,9 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/menu" element={<MenuCliente />} />
-        <Route
-          path="/empleado"
-          element={
-            <RutaProtegida roles={["EMPLEADO", "DUEÑO"]}>
-              <PantallaEmpleado />
-            </RutaProtegida>
-          }
-        />
-        <Route
-          path="/cocina"
-          element={
-            <RutaProtegida roles={["COCINA", "DUEÑO", "EMPLEADO"]}>
-              <PantallaCocina />
-            </RutaProtegida>
-          }
-        />
-        <Route
-          path="/admin/*"
-          element={
-            <RutaProtegida roles={["DUEÑO"]}>
-              <PanelDueno />
-            </RutaProtegida>
-          }
-        />
+        <Route path="/empleado" element={<RutaProtegida roles={["EMPLEADO", "DUENO"]}><PantallaEmpleado /></RutaProtegida>} />
+        <Route path="/cocina" element={<RutaProtegida roles={["COCINA", "DUENO", "EMPLEADO"]}><PantallaCocina /></RutaProtegida>} />
+        <Route path="/admin/*" element={<RutaProtegida roles={["DUENO"]}><PanelDueno /></RutaProtegida>} />
         <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
