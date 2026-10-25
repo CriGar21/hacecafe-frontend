@@ -35,7 +35,7 @@ export default function PanelDueno() {
     <div className="admin-shell" style={s.root}>
       <div style={s.header}>
         <div style={s.headerLeft}>
-          <button className="admin-menu-btn" style={s.menuBtn} onClick={() => setMenuAbierto(!menuAbierto)}>☰</button>
+          <button className="admin-menu-btn" style={s.menuBtn} onClick={() => setMenuAbierto(!menuAbierto)}><span aria-hidden="true" className="hc-menu-glyph"><i></i><i></i><i></i></span><span className="hc-sr-only">Abrir menú</span></button>
           <span style={s.headerTitulo}>HaceCafe Admin</span>
         </div>
         <div style={s.headerRight}>
@@ -146,7 +146,7 @@ function Dashboard({ tema }) {
           </div>
           <div style={s.filtroAcciones}>
             <button style={s.btnBuscar} onClick={buscar}>Buscar</button>
-            <button style={s.btnRefresh} onClick={cargar} title="Recargar">↺</button>
+            <button style={s.btnRefresh} onClick={cargar} title="Recargar"><span aria-hidden="true" className="hc-refresh-glyph">↻</span></button>
           </div>
         </div>
         {filtrosActivos.desde !== hoy || filtrosActivos.hasta !== hoy ? (
@@ -181,7 +181,7 @@ function Dashboard({ tema }) {
 
       {data.stockBajo.length > 0 && (
         <div style={s.alertaBox}>
-          <div style={s.alertaTitulo}>⚠ Reponer urgente</div>
+          <div style={s.alertaTitulo}><span className="hc-status-mark" aria-hidden="true">!</span> Reponer urgente</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {data.stockBajo.map((p) => (
               <div key={p.id} style={s.alertaChip}><span style={{ fontWeight: "700" }}>{p.nombre}</span><span style={{ opacity: 0.8, fontSize: "11px" }}> — {p.stockActual}/{p.stockMinimo} mín.</span></div>
@@ -198,18 +198,19 @@ function Dashboard({ tema }) {
                 <h3 style={s.cardTitulo}>Ventas por hora</h3>
                 <span style={s.cardSubtitulo}>Pico: {data.ventasPorHora.reduce((mx, v) => v.total > mx.total ? v : mx, data.ventasPorHora[0])?.hora}h</span>
               </div>
-              <div style={s.barChart}>
-                {data.ventasPorHora.map((v, i) => {
-                  const altura = maxHora > 0 ? (v.total / maxHora) * 100 : 0;
-                  const esPico = v.total === maxHora && maxHora > 0;
-                  return (
-                    <div key={i} style={s.barCol}>
-                      <div style={s.barLabelTop}>{v.total > 0 ? `$${(v.total / 1000).toFixed(1)}k` : ""}</div>
-                      <div style={s.barWrapper}><div style={{ ...s.bar, height: `${Math.max(altura, v.total > 0 ? 4 : 0)}%`, background: esPico ? `linear-gradient(to top, ${tema.accent}, ${tema.gold})` : tema.gold, opacity: esPico ? 1 : 0.4, boxShadow: esPico ? `0 0 8px ${tema.gold}60` : "none" }} /></div>
-                      <div style={{ ...s.barLabelBot, color: esPico ? tema.gold : tema.textFaded, fontWeight: esPico ? "700" : "400" }}>{v.hora}h</div>
-                    </div>
-                  );
-                })}
+              <div className="hc-sales-chart" role="img" aria-label="Ventas por hora del período">
+                <div className="hc-chart-scale"><span>$0</span><span>${(maxHora / 2).toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span><span>${maxHora.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span></div>
+                <div className="hc-sales-rows">
+                  {data.ventasPorHora.map((v, i) => {
+                    const pct = maxHora > 0 ? (v.total / maxHora) * 100 : 0;
+                    const esPico = v.total === maxHora && maxHora > 0;
+                    return <div className="hc-sales-row" key={i}>
+                      <span className={`hc-sales-hour${esPico ? " is-peak" : ""}`}>{String(v.hora).padStart(2, "0")}:00</span>
+                      <div className="hc-sales-track"><div className={`hc-sales-fill${esPico ? " is-peak" : ""}`} style={{ width: `${pct}%` }} /></div>
+                      <strong className="hc-sales-value">${v.total.toLocaleString("es-AR")}</strong>
+                    </div>;
+                  })}
+                </div>
               </div>
             </div>
           )}
@@ -264,10 +265,10 @@ function Dashboard({ tema }) {
             <div style={{ ...s.card, flex: "2 1 340px" }}>
               <div style={s.cardHeader}><h3 style={s.cardTitulo}>Rendimiento del período</h3></div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <div style={s.statBox}><div style={s.statLabel}>🏆 Producto estrella</div><div style={{ ...s.statValor, color: tema.gold }}>{data.topProductos[0]?.nombre || "—"}</div><div style={s.statSub}>{data.topProductos[0]?.cantidad || 0} unidades</div></div>
-                {margenTotal > 0 && <div style={s.statBox}><div style={s.statLabel}>💰 Mayor margen</div><div style={{ ...s.statValor, color: tema.verde }}>{[...data.topProductos].sort((a, b) => (b.margen||0)-(a.margen||0))[0]?.nombre||"—"}</div><div style={s.statSub}>+${[...data.topProductos].sort((a,b)=>(b.margen||0)-(a.margen||0))[0]?.margen?.toLocaleString()||0}</div></div>}
-                {data.ventasPorHora.length > 0 && <div style={s.statBox}><div style={s.statLabel}>⏰ Hora pico</div><div style={{ ...s.statValor, color: tema.accent }}>{data.ventasPorHora.reduce((mx,v)=>v.total>mx.total?v:mx,data.ventasPorHora[0])?.hora}:00h</div><div style={s.statSub}>${data.ventasPorHora.reduce((mx,v)=>v.total>mx.total?v:mx,data.ventasPorHora[0])?.total?.toLocaleString()} esa hora</div></div>}
-                <div style={s.statBox}><div style={s.statLabel}>📈 Margen neto</div><div style={{ ...s.statValor, color: margenTotal > 0 ? tema.verde : tema.textFaded }}>{data.totalDia > 0 ? Math.round((margenTotal/data.totalDia)*100) : 0}%</div><div style={s.statSub}>sobre ventas totales</div></div>
+                <div style={s.statBox}><div style={s.statLabel}><span className="hc-stat-mark" aria-hidden="true">01</span> Producto estrella</div><div style={{ ...s.statValor, color: tema.gold }}>{data.topProductos[0]?.nombre || "—"}</div><div style={s.statSub}>{data.topProductos[0]?.cantidad || 0} unidades</div></div>
+                {margenTotal > 0 && <div style={s.statBox}><div style={s.statLabel}><span className="hc-stat-mark" aria-hidden="true">02</span> Mayor margen</div><div style={{ ...s.statValor, color: tema.verde }}>{[...data.topProductos].sort((a, b) => (b.margen||0)-(a.margen||0))[0]?.nombre||"—"}</div><div style={s.statSub}>+${[...data.topProductos].sort((a,b)=>(b.margen||0)-(a.margen||0))[0]?.margen?.toLocaleString()||0}</div></div>}
+                {data.ventasPorHora.length > 0 && <div style={s.statBox}><div style={s.statLabel}><span className="hc-stat-mark" aria-hidden="true">03</span> Hora pico</div><div style={{ ...s.statValor, color: tema.accent }}>{data.ventasPorHora.reduce((mx,v)=>v.total>mx.total?v:mx,data.ventasPorHora[0])?.hora}:00h</div><div style={s.statSub}>${data.ventasPorHora.reduce((mx,v)=>v.total>mx.total?v:mx,data.ventasPorHora[0])?.total?.toLocaleString()} esa hora</div></div>}
+                <div style={s.statBox}><div style={s.statLabel}><span className="hc-stat-mark" aria-hidden="true">04</span> Margen sobre ventas</div><div style={{ ...s.statValor, color: margenTotal > 0 ? tema.verde : tema.textFaded }}>{data.totalDia > 0 ? Math.round((margenTotal/data.totalDia)*100) : 0}%</div><div style={s.statSub}>sobre ventas totales</div></div>
               </div>
               <div style={{ borderTop: `1px solid ${tema.separador}`, paddingTop: "12px" }}>
                 <div style={{ fontSize: "11px", color: tema.textFaded, fontWeight: "700", marginBottom: "8px", letterSpacing: "0.5px" }}>DETALLE TOP PRODUCTOS</div>
@@ -526,7 +527,7 @@ function Caja({ tema }) {
 
   return (
     <div style={s.seccion}>
-      <div style={s.seccionHeader}><h2 style={s.seccionTitulo}>Caja</h2><div style={{ display:"flex", gap:"8px" }}>{data && <button style={s.btnRefresh} onClick={cargar}>↺ Actualizar</button>}{data?.pedidos?.length>0 && <button style={s.btnPrimario} onClick={exportarExcel}>Exportar Excel</button>}</div></div>
+      <div style={s.seccionHeader}><h2 style={s.seccionTitulo}>Caja</h2><div style={{ display:"flex", gap:"8px" }}>{data && <button style={s.btnRefresh} onClick={cargar}><span aria-hidden="true" className="hc-refresh-glyph">↻</span> Actualizar</button>}{data?.pedidos?.length>0 && <button style={s.btnPrimario} onClick={exportarExcel}>Exportar Excel</button>}</div></div>
       <div style={s.filtrosCard}>
         <div style={s.filtrosRow}>
           <div style={s.filtroGrupo}><label style={s.formLabel}>Desde</label><input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} style={s.filtroInput} /></div>
@@ -575,7 +576,7 @@ function Categorias({ tema }) {
   const [editando, setEditando] = useState(null);
   const [nueva, setNueva] = useState({ nombre: "", icono: "" });
   const [mostrando, setMostrando] = useState("lista");
-  const EMOJIS = ["☕","🥐","🧃","🍰","🥪","🍵","🧋","🍹","🥤","🍫","🥗","🍕","🧆","🥞","🍳","🫖","🍺","🥂","🎂","🍦"];
+  const ICONOS_CATEGORIA = ["CAFÉ", "PAN", "JUGO", "DULCE", "SÁNDWICH", "TÉ", "FRÍO", "BEBIDA", "POSTRE", "CHOC.", "FRESCO", "PIZZA", "SALADO", "PANQ.", "DESAY.", "INFUS.", "OTRO", "EVENTO", "TORTA", "HELADO"];
 
   const cargar = useCallback(() => { api.get("/admin/categorias").then((r) => setCategorias(r.data)); }, []);
   useEffect(() => { cargar(); }, [cargar]);
@@ -601,7 +602,7 @@ function Categorias({ tema }) {
           <div style={s.formGrupo}>
             <label style={s.formLabel}>Identificador visual (opcional)</label>
             <input style={s.formInput} value={nueva.icono} onChange={(e) => setNueva((n)=>({...n,icono:e.target.value}))} placeholder="Sin icono" />
-            <div style={{ display:"flex", flexWrap:"wrap", gap:"8px", marginTop:"8px" }}>{EMOJIS.map((e) => <button key={e} style={{ fontSize:"22px", background:nueva.icono===e?tema.bgLight:"transparent", border:`1px solid ${tema.borderFaded}`, borderRadius:"8px", padding:"4px 8px", cursor:"pointer" }} onClick={() => setNueva((n)=>({...n,icono:e}))}>{e}</button>)}</div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:"8px", marginTop:"8px" }}>{ICONOS_CATEGORIA.map((e) => <button key={e} style={{ fontSize:"10px", fontWeight:800, letterSpacing:"0.02em", background:nueva.icono===e?tema.bgLight:"transparent", border:`1px solid ${tema.borderFaded}`, borderRadius:"8px", padding:"8px 9px", cursor:"pointer", color:tema.gold }} onClick={() => setNueva((n)=>({...n,icono:e}))}>{e}</button>)}</div>
           </div>
           <button style={s.btnPrimario} onClick={crearNueva}>Crear categoría</button>
         </div>
