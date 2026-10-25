@@ -2,95 +2,17 @@ import { useEffect } from "react";
 import { useTema, TEMAS } from "../context/ThemeContext";
 
 const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+function iconForLabel(label){const text=String(label||"").toLowerCase();if(text.includes("café")||text.includes("cafe"))return"CAFÉ";if(text.includes("pan")||text.includes("torta")||text.includes("desay"))return"PAN";if(text.includes("jugo")||text.includes("fresco")||text.includes("limon"))return"JUGO";if(text.includes("dulce")||text.includes("postre")||text.includes("helado")||text.includes("choc"))return"DULCE";if(text.includes("sándwich")||text.includes("sandwich")||text.includes("salado"))return"SALADO";if(text.includes("té")||text.includes("te")||text.includes("infus"))return"TÉ";if(text.includes("frío")||text.includes("frio")||text.includes("bebida"))return"FRÍO";if(text.includes("pizza"))return"PIZZA";return text.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"CAT";}
 
-function iconForLabel(label) {
-  const text = String(label || "").toLowerCase();
-  if (text.includes("café") || text.includes("cafe")) return "CAFÉ";
-  if (text.includes("pan") || text.includes("torta") || text.includes("desay")) return "PAN";
-  if (text.includes("jugo") || text.includes("fresco") || text.includes("limon")) return "JUGO";
-  if (text.includes("dulce") || text.includes("postre") || text.includes("helado") || text.includes("choc")) return "DULCE";
-  if (text.includes("sándwich") || text.includes("sandwich") || text.includes("salado")) return "SALADO";
-  if (text.includes("té") || text.includes("te") || text.includes("infus")) return "TÉ";
-  if (text.includes("frío") || text.includes("frio") || text.includes("bebida")) return "FRÍO";
-  if (text.includes("pizza")) return "PIZZA";
-  return text.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase() || "CAT";
+function addPrintIcon(button){if(button.querySelector(".hc-inline-print-icon"))return;const label=button.textContent.replace("🖨","").trim();button.textContent="";const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("aria-hidden","true");svg.style.cssText="width:15px;height:15px;flex:0 0 15px";svg.innerHTML='<path d="M7 9V4h10v5M6 17H4V10h16v7h-2M7 14h10v6H7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M17 12h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>';svg.classList.add("hc-inline-print-icon");button.appendChild(svg);button.appendChild(document.createTextNode(label));button.style.display="inline-flex";button.style.alignItems="center";button.style.justifyContent="center";button.style.gap="7px";}
+
+function enhanceOwnerUi(){const root=document.querySelector(".admin-shell");if(!root)return;const content=root.querySelector(".admin-contenido");if(!content)return;
+content.querySelectorAll("input[placeholder='Emoji'],input[placeholder*='Código visual']").forEach((input)=>{input.setAttribute("placeholder","Código visual (ej. CAFÉ)");if(EMOJI_RE.test(input.value||"")){const row=input.parentElement?.parentElement;const nameInput=row?.querySelector("input:not([placeholder*='Código visual'])");const replacement=iconForLabel(nameInput?.value||"categoría");const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;if(setter)setter.call(input,replacement);input.dispatchEvent(new Event("input",{bubbles:true}));}});
+content.querySelectorAll("div").forEach((node)=>{const value=node.textContent?.trim()||"";if(!/^Orden:\s*\d+$/.test(value))return;const info=node.parentElement?.parentElement;const outer=info?.parentElement;const name=info?.querySelector("div")?.textContent||"";const icon=info?.querySelector("span");if(!icon||!name||icon.dataset.hcIconReady==="1")return;icon.dataset.hcIconReady="1";icon.textContent=iconForLabel(name);icon.classList.add("hc-category-icon");icon.setAttribute("aria-hidden","true");icon.style.cssText="display:grid;place-items:center;flex:0 0 46px;width:46px;height:46px;margin:0;border:1px solid rgba(228,177,111,.25);border-radius:13px;color:#e4b16f;background:rgba(228,177,111,.08);font-size:9px;font-weight:900;letter-spacing:.04em";if(outer){outer.classList.add("hc-category-card");outer.style.background="linear-gradient(145deg,#2b1b10,#1b100a)";outer.style.border="1px solid rgba(222,174,112,.22)";outer.style.borderRadius="16px";outer.style.padding="14px";outer.style.boxShadow="0 10px 24px rgba(0,0,0,.14)";const actions=outer.lastElementChild;if(actions){actions.classList.add("hc-category-actions");actions.style.display="flex";actions.style.gap="5px";actions.style.flexWrap="wrap";}}});
+const headings=Array.from(content.querySelectorAll("h2"));const catHeading=headings.find(h=>h.textContent.trim().startsWith("Categorías"));if(catHeading?.parentElement)catHeading.parentElement.classList.add("hc-owner-section-header");const qrHeading=headings.find(h=>h.textContent.trim().startsWith("QR por mesa"));if(qrHeading?.parentElement)qrHeading.parentElement.classList.add("hc-qr-hero");
+const cfg=(()=>{try{return JSON.parse(localStorage.getItem("menu_apariencia")||"{}")}catch{return{}}})();const logo=cfg.logoUrl||"";
+content.querySelectorAll("svg[id^='qr-mesa-']").forEach((svg)=>{const qrBox=svg.parentElement;if(!qrBox)return;const card=qrBox.parentElement;const grid=card?.parentElement;if(grid)grid.classList.add("hc-qr-grid");if(qrBox.dataset.hcQrReady==="1")return;qrBox.dataset.hcQrReady="1";qrBox.classList.add("hc-qr-code");qrBox.style.position="relative";qrBox.style.padding="10px";qrBox.style.borderRadius="16px";qrBox.style.background="#fff";qrBox.style.boxShadow="0 8px 22px rgba(0,0,0,.18)";const badge=document.createElement("span");badge.setAttribute("aria-label","Marca del local");badge.style.cssText="position:absolute;right:7px;top:7px;width:34px;height:34px;padding:4px;display:grid;place-items:center;border:2px solid #fff;border-radius:9px;background:#17100b;color:#e4b16f;font:900 9px Georgia,serif;box-shadow:0 4px 10px rgba(0,0,0,.22);z-index:2;pointer-events:none";if(logo){const img=document.createElement("img");img.src=logo;img.alt="";img.style.cssText="width:100%;height:100%;object-fit:contain;border-radius:5px";badge.appendChild(img)}else badge.textContent="HC";qrBox.appendChild(badge);if(card){card.classList.add("hc-qr-card");card.style.background="linear-gradient(145deg,#2b1b10,#1b100a)";card.style.border="1px solid rgba(222,174,112,.22)";card.style.borderRadius="18px";card.style.padding="18px";card.style.boxShadow="0 14px 30px rgba(0,0,0,.16)";}});
+content.querySelectorAll("button").forEach((button)=>{if(button.textContent.includes("🖨"))addPrintIcon(button)});
 }
 
-function addPrintIcon(button) {
-  if (button.querySelector(".hc-inline-print-icon")) return;
-  const label = button.textContent.replace("🖨", "").trim();
-  button.textContent = "";
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true"); svg.style.cssText = "width:15px;height:15px;flex:0 0 15px";
-  svg.innerHTML = '<path d="M7 9V4h10v5M6 17H4V10h16v7h-2M7 14h10v6H7z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M17 12h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>';
-  svg.classList.add("hc-inline-print-icon");
-  button.appendChild(svg); button.appendChild(document.createTextNode(label));
-  button.style.display = "inline-flex"; button.style.alignItems = "center"; button.style.justifyContent = "center"; button.style.gap = "7px";
-}
-
-function enhanceOwnerUi() {
-  const root = document.querySelector(".admin-shell");
-  if (!root) return;
-  const content = root.querySelector(".admin-contenido");
-  if (!content) return;
-
-  content.querySelectorAll("input[placeholder='Emoji'],input[placeholder*='Código visual']").forEach((input) => {
-    input.setAttribute("placeholder", "Código visual (ej. CAFÉ)");
-    if (EMOJI_RE.test(input.value || "")) {
-      const row = input.parentElement?.parentElement;
-      const nameInput = row?.querySelector("input:not([placeholder*='Código visual'])");
-      const replacement = iconForLabel(nameInput?.value || "categoría");
-      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
-      if (setter) setter.call(input, replacement);
-      input.dispatchEvent(new Event("input", { bubbles:true }));
-    }
-  });
-
-  content.querySelectorAll("div").forEach((node) => {
-    const value = node.textContent?.trim() || "";
-    if (!/^Orden:\s*\d+$/.test(value)) return;
-    const info = node.parentElement?.parentElement;
-    const outer = info?.parentElement;
-    const name = info?.querySelector("div")?.textContent || "";
-    const icon = info?.querySelector("span");
-    if (!icon || !name || icon.dataset.hcIconReady === "1") return;
-    icon.dataset.hcIconReady = "1"; icon.textContent = iconForLabel(name); icon.classList.add("hc-category-icon"); icon.setAttribute("aria-hidden", "true");
-    if (outer) {
-      outer.classList.add("hc-category-card");
-      const actions = outer.lastElementChild;
-      if (actions) actions.classList.add("hc-category-actions");
-    }
-  });
-
-  const headings = Array.from(content.querySelectorAll("h2"));
-  const catHeading = headings.find(h => h.textContent.trim().startsWith("Categorías"));
-  if (catHeading?.parentElement) catHeading.parentElement.classList.add("hc-owner-section-header");
-  const qrHeading = headings.find(h => h.textContent.trim().startsWith("QR por mesa"));
-  if (qrHeading?.parentElement) qrHeading.parentElement.classList.add("hc-qr-hero");
-
-  const cfg = (() => { try { return JSON.parse(localStorage.getItem("menu_apariencia") || "{}"); } catch { return {}; } })();
-  const logo = cfg.logoUrl || "";
-  content.querySelectorAll("svg[id^='qr-mesa-']").forEach((svg) => {
-    const qrBox = svg.parentElement;
-    if (!qrBox) return;
-    const card = qrBox.parentElement;
-    const grid = card?.parentElement;
-    if (grid) grid.classList.add("hc-qr-grid");
-    if (qrBox.dataset.hcQrReady === "1") return;
-    qrBox.dataset.hcQrReady = "1"; qrBox.classList.add("hc-qr-code");
-    const badge = document.createElement("span"); badge.setAttribute("aria-label", "Marca del local");
-    badge.style.cssText = "position:absolute;right:7px;top:7px;width:34px;height:34px;padding:4px;display:grid;place-items:center;border:2px solid #fff;border-radius:9px;background:#17100b;color:#e4b16f;font:900 9px Georgia,serif;box-shadow:0 4px 10px rgba(0,0,0,.22);z-index:2;pointer-events:none";
-    if (logo) { const img=document.createElement("img"); img.src=logo; img.alt=""; img.style.cssText="width:100%;height:100%;object-fit:contain;border-radius:5px"; badge.appendChild(img); } else badge.textContent="HC";
-    qrBox.appendChild(badge);
-    if (card) card.classList.add("hc-qr-card");
-  });
-
-  content.querySelectorAll("button").forEach((button) => { if (button.textContent.includes("🖨")) addPrintIcon(button); });
-}
-
-export default function SelectorTema({ style = {} }) {
-  const { temaActual, cambiarTema } = useTema();
-  useEffect(() => { const run=()=>enhanceOwnerUi(); run(); const observer=new MutationObserver(run); observer.observe(document.body,{childList:true,subtree:true}); return()=>observer.disconnect(); }, []);
-  const coloresBotones = { oscuro:{bg:"#1a1612",ring:"#C8913A"}, natural:{bg:"#445925",ring:"#BC6849"} };
-  return <div style={{display:"flex",gap:"6px",alignItems:"center",...style}}>{Object.keys(TEMAS).map((key)=>{const activo=temaActual===key;const {bg,ring}=coloresBotones[key];return <button key={key} title={TEMAS[key].nombre} onClick={()=>cambiarTema(key)} style={{width:"22px",height:"22px",borderRadius:"50%",border:activo?`3px solid ${ring}`:"2px solid rgba(128,128,128,0.4)",background:bg,cursor:"pointer",padding:0,transition:"all 0.2s",boxShadow:activo?`0 0 0 2px ${ring}60`:"none",flexShrink:0}}/>;})}</div>;
-}
+export default function SelectorTema({style={}}){const{temaActual,cambiarTema}=useTema();useEffect(()=>{const run=()=>enhanceOwnerUi();run();const observer=new MutationObserver(run);observer.observe(document.body,{childList:true,subtree:true});return()=>observer.disconnect()},[]);const coloresBotones={oscuro:{bg:"#1a1612",ring:"#C8913A"},natural:{bg:"#445925",ring:"#BC6849"}};return <div style={{display:"flex",gap:"6px",alignItems:"center",...style}}>{Object.keys(TEMAS).map((key)=>{const activo=temaActual===key;const{bg,ring}=coloresBotones[key];return <button key={key} title={TEMAS[key].nombre} onClick={()=>cambiarTema(key)} style={{width:"22px",height:"22px",borderRadius:"50%",border:activo?`3px solid ${ring}`:"2px solid rgba(128,128,128,0.4)",background:bg,cursor:"pointer",padding:0,transition:"all 0.2s",boxShadow:activo?`0 0 0 2px ${ring}60`:"none",flexShrink:0}}/>})}</div>}
