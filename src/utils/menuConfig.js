@@ -26,6 +26,7 @@ export function leerConfig() {
   } catch { return CONFIG_DEFAULT; }
 }
 
+// Guarda inmediatamente el caché local y, si hay sesión, persiste también en el backend.
 export function guardarConfig(cfg) {
   localStorage.setItem(CACHE_KEY, JSON.stringify(cfg));
   const token = localStorage.getItem("token");
@@ -35,16 +36,14 @@ export function guardarConfig(cfg) {
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(cfg),
   }).then(async (r) => {
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || "No se pudo guardar la apariencia");
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      throw new Error(data.error || "No se pudo guardar la apariencia");
+    }
+    const data = await r.json();
     const completa = { ...CONFIG_DEFAULT, ...data };
     localStorage.setItem(CACHE_KEY, JSON.stringify(completa));
-    window.dispatchEvent(new Event("menu-apariencia-guardada"));
     return completa;
-  }).catch((error) => {
-    console.error("Error guardando apariencia:", error);
-    alert(error.message || "No se pudo guardar la apariencia en el servidor");
-    throw error;
   });
 }
 
@@ -52,31 +51,45 @@ export function useMenuConfig() {
   const [cfg, setCfg] = useState(leerConfig);
   useEffect(() => {
     let vivo = true;
-    fetch(`${API}/config/apariencia`).then((r) => (r.ok ? r.json() : null)).then((data) => {
-      if (!vivo || !data || typeof data !== "object") return;
-      const completa = { ...CONFIG_DEFAULT, ...data };
-      setCfg(completa); localStorage.setItem(CACHE_KEY, JSON.stringify(completa));
-    }).catch(() => {});
-    const actualizar = () => setCfg(leerConfig());
-    window.addEventListener("storage", actualizar);
-    window.addEventListener("menu-apariencia-guardada", actualizar);
-    return () => { vivo = false; window.removeEventListener("storage", actualizar); window.removeEventListener("menu-apariencia-guardada", actualizar); };
+    fetch(`${API}/config/apariencia`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!vivo || !data || typeof data !== "object") return;
+        const completa = { ...CONFIG_DEFAULT, ...data };
+        setCfg(completa); localStorage.setItem(CACHE_KEY, JSON.stringify(completa));
+      })
+      .catch(() => {});
+    const alCambiarStorage = () => setCfg(leerConfig());
+    window.addEventListener("storage", alCambiarStorage);
+    return () => { vivo = false; window.removeEventListener("storage", alCambiarStorage); };
   }, []);
   return cfg;
 }
 
-export function getFuente(id) { return (FUENTES_DISPONIBLES.find((f) => f.id === id) || FUENTES_DISPONIBLES[0]).css; }
+export function getFuente(id) {
+  return (FUENTES_DISPONIBLES.find((f) => f.id === id) || FUENTES_DISPONIBLES[0]).css;
+}
+
 export function cargarFuente(id) {
   const fuente = FUENTES_DISPONIBLES.find((f) => f.id === id);
   if (!fuente || !fuente.google || typeof document === "undefined") return;
   const linkId = `gf-${fuente.id}`;
   if (document.getElementById(linkId)) return;
   const link = document.createElement("link"); link.id = linkId; link.rel = "stylesheet";
-  link.href = `https://fonts.googleapis.com/css2?family=${fuente.google}&display=swap`; document.head.appendChild(link);
+  link.href = `https://fonts.googleapis.com/css2?family=${fuente.google}&display=swap`;
+  document.head.appendChild(link);
 }
-function hexARgb(hex, respaldo = "#000000") { const valido = /^#[0-9a-f]{6}$/i.test(hex || "") ? hex : respaldo; return [parseInt(valido.slice(1, 3), 16), parseInt(valido.slice(3, 5), 16), parseInt(valido.slice(5, 7), 16)]; }
+
+function hexARgb(hex, respaldo = "#000000") {
+  const valido = /^#[0-9a-f]{6}$/i.test(hex || "") ? hex : respaldo;
+  return [parseInt(valido.slice(1, 3), 16), parseInt(valido.slice(3, 5), 16), parseInt(valido.slice(5, 7), 16)];
+}
 export function hexToRgba(hex, alpha) { const [r, g, b] = hexARgb(hex); return `rgba(${r},${g},${b},${alpha})`; }
 export function mezclar(a, b, t) { const A = hexARgb(a); const B = hexARgb(b); const m = A.map((v, i) => Math.round(v * (1 - t) + B[i] * t)); return `rgb(${m.join(",")})`; }
 function luminancia(hex) { const [r, g, b] = hexARgb(hex).map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; }
 export function textoSobre(hex) { const L = luminancia(hex); const conBlanco = 1.05 / (L + 0.05); const conOscuro = (L + 0.05) / 0.055; return conOscuro >= conBlanco ? "#14110d" : "#ffffff"; }
-export function buildPaleta(cfg) { const primario = cfg.colorPrimario || CONFIG_DEFAULT.colorPrimario, fondo = cfg.colorFondo || CONFIG_DEFAULT.colorFondo, card = cfg.colorCard || CONFIG_DEFAULT.colorCard, texto = cfg.colorTexto || CONFIG_DEFAULT.colorTexto; const claro = luminancia(fondo) > 0.5; return { primario, fondo, card, texto, claro, sobrePrimario: textoSobre(primario), textoSuave: hexToRgba(texto, 0.66), textoTenue: hexToRgba(texto, 0.46), borde: hexToRgba(texto, claro ? 0.12 : 0.1), bordePrimario: hexToRgba(primario, 0.45), primarioSuave: hexToRgba(primario, 0.16), vidrio: hexToRgba(fondo, 0.82), sombra: claro ? "0 10px 30px rgba(20,20,20,0.10)" : "0 10px 30px rgba(0,0,0,0.45)", ok: "#3fa66b", info: "#4a8bcc", error: "#d9534f" }; }
+export function buildPaleta(cfg) {
+  const primario = cfg.colorPrimario || CONFIG_DEFAULT.colorPrimario, fondo = cfg.colorFondo || CONFIG_DEFAULT.colorFondo, card = cfg.colorCard || CONFIG_DEFAULT.colorCard, texto = cfg.colorTexto || CONFIG_DEFAULT.colorTexto;
+  const claro = luminancia(fondo) > 0.5;
+  return { primario, fondo, card, texto, claro, sobrePrimario: textoSobre(primario), textoSuave: hexToRgba(texto, 0.66), textoTenue: hexToRgba(texto, 0.46), borde: hexToRgba(texto, claro ? 0.12 : 0.1), bordePrimario: hexToRgba(primario, 0.45), primarioSuave: hexToRgba(primario, 0.16), vidrio: hexToRgba(fondo, 0.82), sombra: claro ? "0 10px 30px rgba(20,20,20,0.10)" : "0 10px 30px rgba(0,0,0,0.45)", ok: "#3fa66b", info: "#4a8bcc", error: "#d9534f" };
+}
