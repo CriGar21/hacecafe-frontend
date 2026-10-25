@@ -169,19 +169,6 @@ export default function MenuCliente() {
     cargarFuente(cfg.fuenteId);
   }, [cfg.fuenteId]);
 
-  useEffect(() => {
-    const elementos = document.querySelectorAll(".mc-reveal");
-    if (!("IntersectionObserver" in window)) {
-      elementos.forEach((el) => el.classList.add("is-visible"));
-      return;
-    }
-    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
-      if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); }
-    }), { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
-    elementos.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [cargando, secciones.length, termino]);
-
   // Carga del menú
   useEffect(() => {
     let vivo = true;
@@ -223,6 +210,20 @@ export default function MenuCliente() {
   );
 
   const termino = normalizar(busqueda.trim());
+
+  useEffect(() => {
+    const elementos = document.querySelectorAll(".mc-reveal");
+    if (!("IntersectionObserver" in window)) {
+      elementos.forEach((el) => el.classList.add("is-visible"));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); }
+    }), { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+    elementos.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [cargando, secciones.length, termino]);
+
 
   const resultados = useMemo(() => {
     if (!termino) return [];
