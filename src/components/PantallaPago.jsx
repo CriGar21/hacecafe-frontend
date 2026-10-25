@@ -19,6 +19,8 @@ export default function PantallaPago({
 }) {
   const [copiado, setCopiado] = useState(null);
   const [confirmando, setConfirmando] = useState(false);
+  const [dividir, setDividir] = useState(false);
+  const [personas, setPersonas] = useState(2);
 
   const config = {
     mp_alias: localStorage.getItem("mp_alias") || "",
@@ -470,6 +472,26 @@ export default function PantallaPago({
           )}
         </div>
 
+        <div style={{ padding: "1rem 1.5rem", borderTop: `1px solid ${C.border}`, background: "rgba(200,145,58,.045)" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "10px", color: C.cream, fontWeight: 800, cursor: "pointer" }}>
+            <input type="checkbox" checked={dividir} onChange={(e) => setDividir(e.target.checked)} />
+            <span>Dividir la cuenta entre varias personas</span>
+          </label>
+          {dividir && <div style={{ marginTop: "12px" }}>
+            <div style={{ color: C.textSub, fontSize: "12px", marginBottom: "8px" }}>¿Entre cuántas personas?</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <button type="button" onClick={() => setPersonas((n) => Math.max(2,n-1))} aria-label="Una persona menos">−</button>
+              <strong style={{ color: C.cream }}>{personas} personas</strong>
+              <button type="button" onClick={() => setPersonas((n) => Math.min(20,n+1))} aria-label="Una persona más">+</button>
+            </div>
+            <div style={{ marginTop: "12px", padding: "12px", borderRadius: "12px", background: C.bgLight, border: `1px solid ${C.border}` }}>
+              <div style={{ color: C.textSub, fontSize: "12px" }}>Cada persona paga aproximadamente</div>
+              <div style={{ color: C.goldCl, fontSize: "26px", fontWeight: 900, fontFamily: "Georgia, serif" }}>{(total/personas).toLocaleString("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:2})}</div>
+              <div style={{ color: C.textSub, fontSize: "11px", marginTop: "4px" }}>Cobrá cada parte por separado y confirmá el cobro total cuando hayan pagado todos.</div>
+            </div>
+          </div>}
+        </div>
+
         {/* Footer — confirmar pago (no se puede cerrar sin confirmar) */}
         <div
           style={{
@@ -498,7 +520,7 @@ export default function PantallaPago({
           >
             {confirmando
               ? "Procesando..."
-              : `Confirmar pago recibido — $${total.toLocaleString()}`}
+              : `Confirmar cobro total — $${total.toLocaleString()}`}
           </button>
           <p
             style={{
@@ -508,7 +530,7 @@ export default function PantallaPago({
               margin: 0,
             }}
           >
-            Al confirmar se emite el ticket automáticamente
+            {dividir ? "Confirmá solo cuando hayas recibido todas las partes." : "Al confirmar se emite el ticket automáticamente"}
           </p>
         </div>
       </div>
