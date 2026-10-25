@@ -157,6 +157,7 @@ export default function PantallaCocina() {
 
   return (
     <div
+      className="hc-ops hc-kitchen"
       style={{
         minHeight: "100vh",
         background: tema.bg,
@@ -272,6 +273,7 @@ export default function PantallaCocina() {
           return (
             <div
               key={pedido.id}
+              className="hc-ops-card hc-kitchen-order"
               style={{
                 background: getBgCard(pedido.estado),
                 borderRadius: "16px",
