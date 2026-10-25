@@ -32,7 +32,7 @@ export default function PanelDueno() {
   const navigate = useNavigate();
 
   return (
-    <div style={s.root}>
+    <div className="admin-shell" style={s.root}>
       <div style={s.header}>
         <div style={s.headerLeft}>
           <button className="admin-menu-btn" style={s.menuBtn} onClick={() => setMenuAbierto(!menuAbierto)}>☰</button>
