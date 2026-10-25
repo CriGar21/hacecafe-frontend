@@ -342,9 +342,9 @@ function Productos({ tema }) {
               <label style={s.formLabel}>Categoría</label>
               <div style={{ display: "flex", gap: "8px" }}>
                 <select style={{ ...s.formInput, flex: 1 }} value={form.categoriaId} onChange={(e) => setForm((f) => ({ ...f, categoriaId: e.target.value }))}>
-                  {categorias.map((c) => <option key={c.id} value={c.id}>{c.icono} {c.nombre}</option>)}
+                  {categorias.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
-                <button style={{ ...s.btnSecundario, padding: "8px 12px", fontSize: "13px", whiteSpace: "nowrap" }} onClick={async () => { const nombre = prompt("Nombre de la nueva categoría:"); if (!nombre) return; const icono = prompt("Emoji o ícono (opcional):") || ""; await api.post("/categorias/nueva", { nombre, icono }); api.get("/admin/categorias").then((r) => setCategorias(r.data)); }}>+ Nueva</button>
+                <button style={{ ...s.btnSecundario, padding: "8px 12px", fontSize: "13px", whiteSpace: "nowrap" }} onClick={async () => { const nombre = prompt("Nombre de la nueva categoría:"); if (!nombre) return; const icono = ""; await api.post("/categorias/nueva", { nombre, icono }); api.get("/admin/categorias").then((r) => setCategorias(r.data)); }}>+ Nueva</button>
               </div>
             </div>
             <div style={s.formGrupo}><label style={s.formLabel}>Nombre</label><input style={s.formInput} value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} /></div>
@@ -599,8 +599,8 @@ function Categorias({ tema }) {
         <div style={s.card}>
           <div style={s.formGrupo}><label style={s.formLabel}>Nombre</label><input style={s.formInput} value={nueva.nombre} onChange={(e) => setNueva((n)=>({...n,nombre:e.target.value}))} placeholder="Ej: Licuados" /></div>
           <div style={s.formGrupo}>
-            <label style={s.formLabel}>Emoji</label>
-            <input style={s.formInput} value={nueva.icono} onChange={(e) => setNueva((n)=>({...n,icono:e.target.value}))} placeholder="Pegá un emoji" />
+            <label style={s.formLabel}>Identificador visual (opcional)</label>
+            <input style={s.formInput} value={nueva.icono} onChange={(e) => setNueva((n)=>({...n,icono:e.target.value}))} placeholder="Sin icono" />
             <div style={{ display:"flex", flexWrap:"wrap", gap:"8px", marginTop:"8px" }}>{EMOJIS.map((e) => <button key={e} style={{ fontSize:"22px", background:nueva.icono===e?tema.bgLight:"transparent", border:`1px solid ${tema.borderFaded}`, borderRadius:"8px", padding:"4px 8px", cursor:"pointer" }} onClick={() => setNueva((n)=>({...n,icono:e}))}>{e}</button>)}</div>
           </div>
           <button style={s.btnPrimario} onClick={crearNueva}>Crear categoría</button>
@@ -827,7 +827,7 @@ function Apariencia({ tema }) {
             <div style={{ background:previewBg, padding:"8px 10px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6px" }}>
               {["Café con leche","Medialunas","Tostado","Jugo"].map((nombre, i) => (
                 <div key={nombre} style={{ background:previewCard, borderRadius:"8px", overflow:"hidden", border:`1px solid ${previewGold}15` }}>
-                  <div style={{ height:"44px", background:`${lightenHex(previewBg, 0.1)}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px" }}>{"☕🥐🥪🧃".split("")[i]}</div>
+                  <div style={{ height:"44px", background:`${lightenHex(previewBg, 0.1)}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px" }}>{["C","M","T","J"][i]}</div>
                   <div style={{ padding:"5px 6px" }}>
                     <div style={{ fontFamily:fuente, fontSize:"9px", fontWeight:"700", color:previewText, lineHeight:1.2 }}>{nombre}</div>
                     <div style={{ fontFamily:fuente, fontSize:"10px", fontWeight:"800", color:previewGold, marginTop:"2px" }}>$1.500</div>
