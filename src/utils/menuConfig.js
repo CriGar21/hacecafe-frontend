@@ -73,6 +73,9 @@ function instalarSincronizacionNegocio() {
     Storage.prototype.__haceCafeConfigPatch = true;
   }
 
+  const dominioActual = localStorage.getItem("rs_dominio");
+  if (dominioActual) originalSetItem.call(localStorage, "rs_dominio", normalizarDominio(dominioActual));
+
   const token = localStorage.getItem("token");
   if (!token) return;
   fetch(`${API}/config/negocio`)
