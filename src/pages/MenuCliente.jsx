@@ -169,6 +169,19 @@ export default function MenuCliente() {
     cargarFuente(cfg.fuenteId);
   }, [cfg.fuenteId]);
 
+  useEffect(() => {
+    const elementos = document.querySelectorAll(".mc-reveal");
+    if (!("IntersectionObserver" in window)) {
+      elementos.forEach((el) => el.classList.add("is-visible"));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); }
+    }), { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+    elementos.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [cargando, secciones.length, termino]);
+
   // Carga del menú
   useEffect(() => {
     let vivo = true;
@@ -499,7 +512,15 @@ export default function MenuCliente() {
 
       <header>
         <div className="mc-hero">
-          {cfg.heroBgUrl && <img src={cfg.heroBgUrl} alt="" />}
+          <img src={cfg.heroBgUrl || "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=2000&q=85"} alt="" fetchPriority="high" />
+          <div className="mc-hero-copy">
+            <span className="mc-eyebrow">BUEN CAFÉ, MEJORES MOMENTOS</span>
+            <h2>El café que <em>te hace bien</em></h2>
+            <p>Sabores únicos, preparados con pasión y los mejores ingredientes.</p>
+            <button type="button" className="mc-hero-cta" onClick={() => document.querySelector(".mc-sticky")?.scrollIntoView({ behavior: "smooth" })}>VER MENÚ <span aria-hidden="true">↘</span></button>
+            <div className="mc-hero-notes"><span>✧ Ingredientes de calidad</span><span>♡ Hecho con pasión</span><span>☕ Tu lugar de siempre</span></div>
+          </div>
+          <div className="mc-scroll-hint" aria-hidden="true"><span>SCROLL</span><i /></div>
         </div>
         <div className="mc-wrap">
           <div className="mc-head">
@@ -581,7 +602,7 @@ export default function MenuCliente() {
         )}
 
         {!cargando && !errorCarga && termino && (
-          <section className="mc-sec">
+          <section className="mc-sec mc-reveal">
             <div className="mc-sec-title">
               <h2 className="mc-serif">Resultados</h2>
               <span>{resultados.length}</span>
@@ -605,12 +626,12 @@ export default function MenuCliente() {
           secciones.map((s) => (
             <section
               key={s.id}
-              className="mc-sec"
+              className="mc-sec mc-reveal"
               data-cat={s.id}
               ref={(el) => (seccionRefs.current[s.id] = el)}
             >
               <div className="mc-sec-title">
-                <h2 className="mc-serif">{s.nombre}</h2>
+                <div><span className="mc-eyebrow">DESCUBRÍ</span><h2 className="mc-serif">{s.nombre}</h2></div>
                 <span>{s.items.length}</span>
               </div>
               <div className="mc-list">{s.items.map(renderFila)}</div>
