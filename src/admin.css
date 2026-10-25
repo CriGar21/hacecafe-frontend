@@ -328,3 +328,35 @@
   .hc-ops *, .admin-shell *, .hc-kitchen * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
 
+
+
+/* Dashboard analytics refresh: clear horizontal comparison charts, no emoji dependency */
+.hc-sales-chart { display:grid; grid-template-columns:48px minmax(0,1fr); gap:12px; padding:18px 2px 4px; min-width:0; }
+.hc-chart-scale { grid-column:2; display:flex; justify-content:space-between; gap:8px; color:var(--hc-muted); font-size:10px; padding-bottom:6px; border-bottom:1px solid var(--hc-line); }
+.hc-sales-rows { grid-column:1 / -1; display:flex; flex-direction:column; gap:13px; }
+.hc-sales-row { display:grid; grid-template-columns:48px minmax(40px,1fr) minmax(70px,auto); align-items:center; gap:12px; min-width:0; }
+.hc-sales-hour { color:var(--hc-muted); font-size:12px; font-variant-numeric:tabular-nums; }
+.hc-sales-hour.is-peak { color:var(--hc-gold-soft); font-weight:800; }
+.hc-sales-track { height:12px; background:rgba(226,174,105,.10); border:1px solid rgba(226,174,105,.12); border-radius:99px; overflow:hidden; position:relative; }
+.hc-sales-track:after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,transparent 49.7%,rgba(255,255,255,.08) 50%,transparent 50.3%); pointer-events:none; }
+.hc-sales-fill { height:100%; border-radius:99px; min-width:0; background:linear-gradient(90deg,#78502a,#bd8842); transition:width .45s ease; }
+.hc-sales-fill.is-peak { background:linear-gradient(90deg,#d59a48,#f1cc88); box-shadow:0 0 14px rgba(228,177,111,.22); }
+.hc-sales-value { color:var(--hc-cream); text-align:right; font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.hc-status-mark { display:inline-grid; place-items:center; width:21px; height:21px; margin-right:6px; border-radius:7px; border:1px solid currentColor; font-size:12px; font-weight:900; vertical-align:middle; }
+.hc-stat-mark { display:inline-grid; place-items:center; min-width:24px; height:20px; margin-right:6px; padding:0 4px; border-radius:6px; border:1px solid var(--hc-line); color:var(--hc-gold); font-size:9px; letter-spacing:.04em; vertical-align:middle; }
+.hc-menu-glyph { display:flex; width:19px; flex-direction:column; gap:4px; }
+.hc-menu-glyph i { display:block; height:2px; width:19px; border-radius:2px; background:currentColor; }
+.hc-refresh-glyph { display:inline-block; font-size:17px; line-height:1; vertical-align:-1px; }
+.hc-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.admin-shell .admin-contenido { background:radial-gradient(ellipse at 20% 0%,rgba(173,108,45,.07),transparent 32%),#160d08 !important; }
+.admin-shell .admin-contenido > div { min-width:0; }
+.admin-shell .admin-contenido h2 { font-size:clamp(1.2rem,2vw,1.65rem); line-height:1.25; }
+.admin-shell .admin-contenido input:focus, .admin-shell .admin-contenido select:focus, .admin-shell .admin-contenido textarea:focus { border-color:#d9a65e !important; box-shadow:0 0 0 3px rgba(217,166,94,.13); outline:none; }
+.admin-shell .admin-contenido button:focus-visible { outline:2px solid #f2d4a6; outline-offset:3px; }
+@media(max-width:700px) {
+ .hc-sales-chart { grid-template-columns:38px minmax(0,1fr); gap:8px; padding-top:10px; }
+ .hc-sales-row { grid-template-columns:38px minmax(28px,1fr) minmax(60px,auto); gap:7px; }
+ .hc-sales-value { font-size:11px; }
+ .hc-sales-rows { gap:11px; }
+}
+@media(prefers-reduced-motion:reduce) { .hc-sales-fill { transition:none; } }
