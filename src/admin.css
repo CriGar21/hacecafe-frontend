@@ -108,3 +108,13 @@
 @keyframes hc-payment-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes hc-payment-panel-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .hc-payment-backdrop, .hc-payment-backdrop > div { animation: none !important; } }
+
+
+/* Ticket de HaceCafé: identidad de marca y modal */
+.hc-ticket-backdrop { background: radial-gradient(ellipse at 50% 12%, rgba(92,57,31,.48), rgba(4,3,2,.94) 68%) !important; backdrop-filter: blur(10px); animation: hc-payment-in .24s ease both; }
+.hc-ticket-modal { border: 1px solid rgba(228,177,111,.35) !important; border-radius: 22px !important; box-shadow: 0 32px 100px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.025) inset; animation: hc-payment-panel-in .3s cubic-bezier(.2,.8,.2,1) both; }
+.hc-ticket-modal > div:first-child { background: linear-gradient(145deg,#28190f,#1a100a) !important; border-bottom-color: rgba(228,177,111,.22) !important; }
+.hc-ticket-modal button { transition: transform .18s ease, filter .18s ease; }
+.hc-ticket-modal button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.hc-ticket-modal button:focus-visible { outline: 2px solid #f2d4a6; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .hc-ticket-backdrop, .hc-ticket-modal { animation: none !important; } }
