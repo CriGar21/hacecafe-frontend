@@ -13,7 +13,8 @@ const estilos = {
 };
 
 export default function PantallaFichaje() {
-  const [pin, setPin] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [tipo, setTipo] = useState("INGRESO");
   const [resultado, setResultado] = useState(null); // { ok, texto }
   const [cargando, setCargando] = useState(false);
@@ -32,13 +33,14 @@ export default function PantallaFichaje() {
       async ({ coords }) => {
         try {
           const { data } = await api.post("/fichajes", {
-            pin,
+            email: email.trim(),
+            password,
             tipo,
             latitud: coords.latitude,
             longitud: coords.longitude,
           });
           setResultado({ ok: true, texto: data.mensaje });
-          setPin("");
+          setPassword("");
         } catch (err) {
           setResultado({ ok: false, texto: err.response?.data?.error || "Error de conexión al servidor." });
         } finally {
@@ -67,24 +69,33 @@ export default function PantallaFichaje() {
 
         <div style={estilos.tipos}>
           <button type="button" style={botonTipo("INGRESO")} onClick={() => setTipo("INGRESO")}>Ingreso</button>
-          <button type="button" style={botonTipo("EGRESO")} onClick={() => setTipo("EGRESO")}>Egreso</button>
+          <button type="button" style={botonTipo("EGRESO")} onClick={() => setTipo("EGRESO")}>Salida</button>
         </div>
 
-        <label style={estilos.label} htmlFor="pin">PIN de empleado</label>
+        <label style={estilos.label} htmlFor="email">Email</label>
         <input
-          id="pin"
-          type="password"
-          inputMode="numeric"
-          autoComplete="off"
-          maxLength={6}
-          value={pin}
-          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-          style={{ ...estilos.campo, textAlign: "center", letterSpacing: 8, fontSize: 24 }}
-          placeholder="••••"
+          id="email"
+          type="email"
+          autoComplete="username"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={estilos.campo}
+          placeholder="tu@email.com"
           required
         />
 
-        <button type="submit" style={{ ...estilos.boton, opacity: cargando || pin.length < 4 ? 0.5 : 1 }} disabled={cargando || pin.length < 4}>
+        <label style={estilos.label} htmlFor="password">Contraseña</label>
+        <input
+          id="password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={estilos.campo}
+          required
+        />
+
+        <button type="submit" style={{ ...estilos.boton, opacity: cargando || !email || !password ? 0.5 : 1 }} disabled={cargando || !email || !password}>
           {cargando ? "Validando ubicación..." : "Registrar fichaje"}
         </button>
 
