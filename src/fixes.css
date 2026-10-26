@@ -1,0 +1,129 @@
+/* Ajustes responsive y experiencia de juego */
+
+@media (max-width: 768px) {
+  .admin-modern-shell {
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .admin-modern-shell .admin-sidebar {
+    position: fixed !important;
+    top: 64px !important;
+    left: -280px !important;
+    width: 260px !important;
+    min-width: 260px !important;
+    height: calc(100vh - 64px) !important;
+    z-index: 220 !important;
+    overflow-y: auto !important;
+    transition: left .25s ease !important;
+  }
+
+  .admin-modern-shell .admin-sidebar.open {
+    left: 0 !important;
+  }
+
+  .admin-modern-shell .admin-modern-content {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    padding: 15px 12px 86px !important;
+  }
+
+  .admin-modern-shell .admin-modern-content > * {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .admin-modern-shell .admin-overlay {
+    position: fixed !important;
+    inset: 64px 0 0 !important;
+    z-index: 210 !important;
+  }
+}
+
+/* La ruleta debe ser parte del juego de espera, no de las promociones. */
+body:has(.mc-promo-pop-overlay) .mc-game-card {
+  display: none !important;
+}
+
+/* Representación visual de la ruleta usando el CTA existente. */
+.mc-game-card .mc-cta.full {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 150px !important;
+  height: 150px !important;
+  min-height: 150px !important;
+  margin: 18px auto 4px !important;
+  padding: 18px !important;
+  overflow: visible !important;
+  border-radius: 50% !important;
+  border: 8px solid #f0c982 !important;
+  background: conic-gradient(
+    #8f5528 0deg 45deg,
+    #d79b4b 45deg 90deg,
+    #5d341b 90deg 135deg,
+    #edc477 135deg 180deg,
+    #8f5528 180deg 225deg,
+    #d79b4b 225deg 270deg,
+    #5d341b 270deg 315deg,
+    #edc477 315deg 360deg
+  ) !important;
+  color: #fff7e8 !important;
+  box-shadow: 0 12px 34px rgba(0,0,0,.35), inset 0 0 0 3px rgba(255,255,255,.18) !important;
+  font-size: 0 !important;
+  font-weight: 900 !important;
+  transition: transform .2s ease !important;
+}
+
+.mc-game-card .mc-cta.full::before {
+  content: "";
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 24px solid #f4d18d;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 3px 3px rgba(0,0,0,.35));
+}
+
+.mc-game-card .mc-cta.full::after {
+  content: "JUGAR";
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #25150b;
+  border: 3px solid #f3cf8a;
+  color: #ffe8bd;
+  font-size: 13px;
+  letter-spacing: .08em;
+  box-shadow: 0 4px 14px rgba(0,0,0,.3);
+}
+
+.mc-game-card .mc-cta.full:hover:not(:disabled) {
+  transform: scale(1.04) rotate(2deg) !important;
+}
+
+.mc-game-card .mc-cta.full:disabled {
+  cursor: wait !important;
+  animation: hc-roulette-spin 1s linear infinite !important;
+}
+
+@keyframes hc-roulette-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .mc-game-card .mc-cta.full {
+    width: 132px !important;
+    height: 132px !important;
+    min-height: 132px !important;
+  }
+}
