@@ -7,10 +7,6 @@ import "./theme.css";
 import "./App.css";
 import "./hc-polish.css";
 import "./responsive.css";
-import "./hcWorkflowBridge.js";
-import "./hcNoEmoji.js";
-import "./hcQRRepair.jsx";
-import "./hcOrderPolicy.js";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
