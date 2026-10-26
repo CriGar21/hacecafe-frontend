@@ -154,6 +154,12 @@ export default function MenuCliente() {
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
   const [promociones, setPromociones] = useState([]);
+  const [juego, setJuego] = useState(null);
+  const [promoPopup, setPromoPopup] = useState(null);
+  const [promoDetalle, setPromoDetalle] = useState(null);
+  const [jugando, setJugando] = useState(false);
+  const [resultadoJuego, setResultadoJuego] = useState(null);
+  const [errorJuego, setErrorJuego] = useState("");
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -195,10 +201,13 @@ export default function MenuCliente() {
           [...cats].sort((a, b) => (a.ordenDisplay ?? 999) - (b.ordenDisplay ?? 999)),
         );
         setProductos(prods);
-        setPromociones(Array.isArray(promos) ? promos : []);
+        const listaPromos = Array.isArray(promos) ? promos : [];
+        setPromociones(listaPromos);
+        if (listaPromos.length) window.setTimeout(() => { if (vivo) setPromoPopup(listaPromos[0]); }, 900);
       })
       .catch(() => vivo && setErrorCarga(true))
       .finally(() => vivo && setCargando(false));
+    pedir("/juegos").then(j => vivo && setJuego(j)).catch(() => {});
 
     return () => {
       vivo = false;
@@ -396,6 +405,34 @@ export default function MenuCliente() {
     }
   };
 
+  const jugar = async () => {
+    if (!pedidoEnviado?.id || !pedidoEnviado?.clienteToken || jugando || resultadoJuego) return;
+    setJugando(true); setErrorJuego("");
+    try {
+      const r = await fetch(`${API}/juegos/ruleta/${pedidoEnviado.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: pedidoEnviado.clienteToken }) });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "No se pudo jugar. Intentá nuevamente.");
+      setResultadoJuego(data);
+      setPedidoEnviado(prev => prev ? { ...prev, total: Number(data.total ?? prev.total), descuentoMonto: Number(data.descuento || 0), juegoJugado: true } : prev);
+    } catch (e) { setErrorJuego(e.message || "No se pudo jugar."); }
+    finally { setJugando(false); }
+  };
+
+  const agregarPromocion = (promo) => {
+    const componentes = Array.isArray(promo.productos) ? promo.productos : [];
+    if (!componentes.length) return;
+    for (const comp of componentes) {
+      const prod = productos.find(x => Number(x.id) === Number(comp.productoId));
+      if (!prod || agotado(prod) || maximoDe(prod) < Number(comp.cantidad || 1)) { setPromoDetalle(null); window.alert("La promoción ya no está disponible por falta de stock."); return; }
+    }
+    componentes.forEach(comp => {
+      const prod = productos.find(x => Number(x.id) === Number(comp.productoId));
+      const cantidad = Number(comp.cantidad || 1); const actual = itemEn(prod.id)?.cantidad || 0;
+      fijarCantidad(prod, Math.min(maximoDe(prod), actual + cantidad));
+    });
+    setPromoDetalle(null); setVerCarrito(true);
+  };
+
   const llamarMozo = async () => {
     if (llamandoMozo) return;
     setLlamandoMozo(true);
@@ -551,6 +588,7 @@ export default function MenuCliente() {
             </div>
           </div>
 
+          {juego?.activo && pedidoEnviado.clienteToken && info.paso >= 0 && !terminado && <div className="mc-game-card"><span className="mc-game-kicker">MIENTRAS ESPERÁS</span><h2 className="mc-serif">¡Jugá y ganá algo rico!</h2><p>{resultadoJuego ? `Ganaste ${Number(resultadoJuego.premio || 0)}% de descuento. Código: ${resultadoJuego.codigo}` : `${juego.nombre || "Ruleta de descuentos"} · Podés ganar un descuento para este pedido.`}</p>{!resultadoJuego && <button type="button" className="mc-cta full" disabled={jugando || pedidoEnviado.juegoJugado} onClick={jugar}><span>{jugando ? "Girando la ruleta…" : "🎁 Jugar ahora"}</span></button>}{errorJuego && <p role="alert" className="mc-game-error">{errorJuego}</p>}</div>}
           <div style={{ marginTop: 16, padding: 16, border: "1px solid var(--borde)", borderRadius: 16, textAlign: "left" }}>
             <strong style={{ display: "block", marginBottom: 8 }}>¿Necesitás ayuda?</strong>
             <select aria-label="Motivo para llamar al mozo" value={motivoMozo} onChange={(e) => setMotivoMozo(e.target.value)} style={{ width: "100%", padding: 11, borderRadius: 10, border: "1px solid var(--borde)", background: "var(--card)", color: "var(--texto)", marginBottom: 8 }}>
@@ -606,6 +644,8 @@ export default function MenuCliente() {
         </div>
       )}
 
+      {promoPopup && !promoDetalle && <div className="mc-promo-pop-overlay" role="dialog" aria-modal="true" aria-label="Promoción destacada"><div className="mc-promo-pop"><button type="button" className="mc-promo-pop-close" onClick={() => setPromoPopup(null)} aria-label="Cerrar promoción">×</button>{promoPopup.imagenUrl ? <img src={promoPopup.imagenUrl} alt="" /> : <div className="mc-promo-art"><span>HaceCafé</span><b>Una pausa<br/>que vale</b></div>}<div className="mc-promo-pop-copy"><span className="mc-promo-tag">PROMOCIÓN DESTACADA</span><h2>{promoPopup.nombre}</h2>{promoPopup.descripcion && <p>{promoPopup.descripcion}</p>}{promoPopup.precioOferta != null && <strong className="mc-promo-value">Por {dinero(promoPopup.precioOferta)}</strong>}<button type="button" className="mc-cta full" onClick={() => { setPromoDetalle(promoPopup); setPromoPopup(null); }}>Ver y pedir promoción</button><button type="button" className="mc-promo-later" onClick={() => setPromoPopup(null)}>Ahora no · la veo después en Promociones</button></div></div></div>}
+      {promoDetalle && <div className="mc-promo-pop-overlay" role="dialog" aria-modal="true" aria-label={promoDetalle.nombre}><div className="mc-promo-pop"><button type="button" className="mc-promo-pop-close" onClick={() => setPromoDetalle(null)} aria-label="Cerrar promoción">×</button>{promoDetalle.imagenUrl ? <img src={promoDetalle.imagenUrl} alt="" /> : <div className="mc-promo-art"><span>HaceCafé</span><b>Una pausa<br/>que vale</b></div>}<div className="mc-promo-pop-copy"><span className="mc-promo-tag">PROMOCIÓN</span><h2>{promoDetalle.nombre}</h2>{promoDetalle.descripcion && <p>{promoDetalle.descripcion}</p>}{Array.isArray(promoDetalle.productos) && promoDetalle.productos.length > 0 && <div className="mc-promo-includes"><strong>Incluye</strong>{promoDetalle.productos.map(x => <span key={x.productoId}>{x.cantidad} × {x.nombre}</span>)}</div>}{promoDetalle.precioOferta != null && <strong className="mc-promo-value">Precio del combo: {dinero(promoDetalle.precioOferta)}</strong>}{promoDetalle.productos?.length > 0 ? <button type="button" className="mc-cta full" onClick={() => agregarPromocion(promoDetalle)}>Agregar al pedido</button> : <p className="mc-promo-no-order">Esta promoción no tiene productos vinculados para pedir desde el menú.</p>}</div></div></div>}
       <header>
         <div className="mc-hero">
           <img src={cfg.heroBgUrl || "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=2000&q=85"} alt="" fetchPriority="high" />
@@ -685,10 +725,10 @@ export default function MenuCliente() {
             <div className="mc-sec-title"><div><span className="mc-eyebrow">BENEFICIOS PARA VOS</span><h2 className="mc-serif">Promociones especiales</h2></div><span>{promociones.length} activas</span></div>
             <div className="mc-promo-grid">
               {promociones.map(p => (
-                <article className="mc-promo-card" key={p.id}>
+                <button type="button" className="mc-promo-card" key={p.id} onClick={() => setPromoDetalle(p)} aria-label={`Ver promoción ${p.nombre}`}>
                   {p.imagenUrl ? <img src={p.imagenUrl} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none"}}/> : <div className="mc-promo-art" aria-hidden="true"><span>HaceCafé</span><b>Una pausa<br/>que vale</b><i>✦</i></div>}
-                  <div className="mc-promo-copy"><span className="mc-promo-tag">{p.tipo === "INFORMATIVA" ? "NOVEDAD" : "PROMOCIÓN"}</span><h3>{p.nombre}</h3>{p.descripcion&&<p>{p.descripcion}</p>}{p.tipo==="DESCUENTO"&&<strong className="mc-promo-value">{Number(p.valor)}% de descuento</strong>}{p.tipo==="MONTO_FIJO"&&<strong className="mc-promo-value">{dinero(p.valor)} de descuento</strong>}</div>
-                </article>
+                  <div className="mc-promo-copy"><span className="mc-promo-tag">{p.tipo === "INFORMATIVA" ? "NOVEDAD" : "PROMOCIÓN"}</span><h3>{p.nombre}</h3>{p.descripcion&&<p>{p.descripcion}</p>}{p.precioOferta != null && <strong className="mc-promo-value">Por {dinero(p.precioOferta)}</strong>}{p.tipo==="DESCUENTO"&&<strong className="mc-promo-value">{Number(p.valor)}% de descuento</strong>}{p.tipo==="MONTO_FIJO"&&<strong className="mc-promo-value">{dinero(p.valor)} de descuento</strong>}<span className="mc-promo-open">Ver promoción y pedir ↗</span></div>
+                </button>
               ))}
             </div>
           </section>
@@ -1374,6 +1414,7 @@ const CSS = `
   .mc .mc-reveal { opacity: 1; transform: none; transition: none; }
 }
 
+.mc-promo-card{width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit}.mc-promo-open{display:block;margin-top:12px;color:#edbc7b;font-size:12px;font-weight:800}.mc-promo-pop-overlay{position:fixed;z-index:10000;inset:0;background:rgba(10,6,3,.76);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:18px}.mc-promo-pop{position:relative;width:min(520px,100%);max-height:90vh;overflow:auto;background:#21150d;border:1px solid rgba(231,181,110,.42);border-radius:22px;box-shadow:0 24px 90px #0009;color:#f8e9d6}.mc-promo-pop>img{width:100%;height:220px;object-fit:cover;display:block}.mc-promo-pop .mc-promo-art{height:220px}.mc-promo-pop-close{position:absolute;right:12px;top:12px;z-index:1;width:38px;height:38px;border:0;border-radius:50%;font-size:27px;line-height:1;background:#130c08dd;color:#fff;cursor:pointer}.mc-promo-pop-copy{padding:22px}.mc-promo-pop-copy h2{font:500 30px/1.12 Georgia,serif;margin:8px 0}.mc-promo-pop-copy p{color:#d3bda5;line-height:1.5}.mc-promo-later{display:block;margin:13px auto 0;background:transparent;border:0;color:#d3bda5;text-decoration:underline;cursor:pointer}.mc-promo-includes{display:grid;gap:7px;padding:12px 0;color:#f2dfc7}.mc-promo-includes strong{color:#edbc7b}.mc-promo-no-order{font-size:13px}.mc-game-card{margin:16px 0;padding:20px;text-align:left;border-radius:18px;border:1px solid rgba(231,181,110,.45);background:linear-gradient(135deg,#3b2516,#1a1009);color:#f8e9d6}.mc-game-kicker{font-size:10px;letter-spacing:.2em;font-weight:800;color:#edbc7b}.mc-game-card h2{font-size:25px;margin:8px 0}.mc-game-card p{font-size:13px;line-height:1.5;color:#e2cbb0}.mc-game-error{color:#ffb8a8!important}
 .mc-promotions{padding:26px 0 10px}.mc-promo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.mc-promo-card{overflow:hidden;border:1px solid rgba(204,153,92,.28);border-radius:18px;background:linear-gradient(135deg,#2b1b10,#180e08);box-shadow:0 12px 28px rgba(0,0,0,.16)}.mc-promo-card>img{display:block;width:100%;height:165px;object-fit:cover}.mc-promo-art{height:165px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:10px;padding:22px;background:radial-gradient(circle at 80% 25%,rgba(231,181,110,.4),transparent 36%),linear-gradient(135deg,#54351d,#1b1009);color:#f7dfbb}.mc-promo-art span{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#e7b56e}.mc-promo-art b{font:400 32px/1 Georgia,serif}.mc-promo-art i{position:absolute;align-self:flex-end;font-size:34px;color:#e7b56e}.mc-promo-copy{padding:16px 18px 19px}.mc-promo-tag{font-size:9px;letter-spacing:.18em;font-weight:800;color:#e7b56e}.mc-promo-copy h3{margin:7px 0;color:#f8e9d6;font:500 23px/1.1 Georgia,serif}.mc-promo-copy p{margin:8px 0;color:#cdb9a2;font-size:13px;line-height:1.55}.mc-promo-value{display:inline-block;margin-top:5px;color:#edbc7b;font-size:13px}
 @media(max-width:600px){.mc-promo-grid{grid-template-columns:1fr}.mc-promo-card>img,.mc-promo-art{height:145px}.mc-promo-copy h3{font-size:21px}}
 
