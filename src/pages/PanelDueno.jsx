@@ -32,16 +32,16 @@ export default function PanelDueno() {
   const navigate = useNavigate();
 
   return (
-    <div className="admin-shell" style={s.root}>
-      <div style={s.header}>
+    <div className="admin-shell admin-modern-shell" style={s.root}>
+      <div className="admin-modern-header" style={s.header}>
         <div style={s.headerLeft}>
           <button className="admin-menu-btn" style={s.menuBtn} onClick={() => setMenuAbierto(!menuAbierto)}><span aria-hidden="true" className="hc-menu-glyph"><i></i><i></i><i></i></span><span className="hc-sr-only">Abrir menú</span></button>
-          <span style={s.headerTitulo}>HaceCafe Admin</span>
+          <div className="admin-brand-lockup"><span className="admin-brand-mark">H</span><span className="admin-brand-copy"><strong>HaceCafé</strong><small>Centro de administración</small></span></div>
         </div>
         <div style={s.headerRight}>
           <SelectorTema />
-          <span style={s.headerUsuario}>{usuario?.nombre}</span>
-          <button style={s.btnLogout} onClick={() => navigate("/empleado")}>Tomar pedido</button>
+          <span className="admin-user-chip"><span className="admin-user-avatar">{(usuario?.nombre||"U").trim().slice(0,1).toUpperCase()}</span><span><small>Sesión iniciada</small><strong>{usuario?.nombre||"Administrador"}</strong></span></span>
+          <button className="admin-action-primary" style={s.btnLogout} onClick={() => navigate("/empleado")}><span aria-hidden="true">＋</span> Tomar pedido</button>
           <button style={s.btnLogout} onClick={logout}>Salir</button>
         </div>
       </div>
@@ -49,7 +49,7 @@ export default function PanelDueno() {
       <div style={s.layout}>
         <div className={`admin-sidebar${menuAbierto ? " open" : ""}`} style={s.sidebar}>
           {SECCIONES.map((sec) => (
-            <button key={sec.id}
+            <button key={sec.id} className={`admin-modern-nav-item${seccion === sec.id ? " is-active" : ""}`}
               style={{ ...s.sidebarBtn, ...(seccion === sec.id ? s.sidebarBtnActivo : {}) }}
               onClick={() => { setSeccion(sec.id); setMenuAbierto(false); }}>
               {sec.label}
@@ -59,7 +59,7 @@ export default function PanelDueno() {
 
         {menuAbierto && <div className="admin-overlay" onClick={() => setMenuAbierto(false)} />}
 
-        <div className="admin-contenido" style={s.contenido}>
+        <div className="admin-contenido admin-modern-content" style={s.contenido}><div className="admin-page-intro"><span className="admin-page-eyebrow">HACÉ QUE PASE</span><h1>{(SECCIONES.find(sec => sec.id === seccion)?.label || "Dashboard")}</h1><p>Todo tu negocio, en un solo lugar.</p></div>
           {seccion === "dashboard"  && <Dashboard  tema={tema} />}
           {seccion === "productos"  && <Productos  tema={tema} />}
           {seccion === "stock"      && <Stock      tema={tema} />}
@@ -69,6 +69,7 @@ export default function PanelDueno() {
           {seccion === "qrmesas"    && <QRMesas    tema={tema} />}
           {seccion === "apariencia" && <Apariencia tema={tema} />}
           {seccion === "config"     && <Configuracion tema={tema} />}
+          </div>
         </div>
       </div>
 
