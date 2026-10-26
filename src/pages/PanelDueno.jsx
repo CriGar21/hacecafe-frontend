@@ -16,6 +16,7 @@ const SECCIONES = [
   { id: "productos",  label: "Productos" },
   { id: "stock",      label: "Stock" },
   { id: "usuarios",   label: "Usuarios" },
+  { id: "fichajes",   label: "Fichajes" },
   { id: "caja",       label: "Caja" },
   { id: "categorias", label: "Categorías" },
   { id: "qrmesas",    label: "QR Mesas" },
@@ -65,6 +66,7 @@ export default function PanelDueno() {
           {seccion === "productos"  && <Productos  tema={tema} />}
           {seccion === "stock"      && <Stock      tema={tema} />}
           {seccion === "usuarios"   && <Usuarios   tema={tema} />}
+          {seccion === "fichajes"   && <Fichajes   tema={tema} />}
           {seccion === "caja"       && <Caja       tema={tema} />}
           {seccion === "categorias" && <Categorias tema={tema} />}
           {seccion === "qrmesas"    && <QRMesas    tema={tema} />}
@@ -482,15 +484,15 @@ function Usuarios({ tema }) {
   const [usuarios, setUsuarios] = useState([]);
   const [mostrando, setMostrando] = useState("lista");
   const [usuarioEditar, setUsuarioEditar] = useState(null);
-  const [form, setForm] = useState({ nombre: "", email: "", password: "", rol: "EMPLEADO" });
+  const [form, setForm] = useState({ nombre: "", email: "", password: "", rol: "EMPLEADO", pin: "" });
   const ROLES = { DUEÑO: "Dueño", EMPLEADO: "Empleado", COCINA: "Cocina" };
 
   const cargar = useCallback(() => { api.get("/admin/usuarios").then((r) => setUsuarios(r.data)); }, []);
   useEffect(() => { cargar(); }, [cargar]);
 
-  const crear = async () => { try { await api.post("/admin/usuarios", form); cargar(); setMostrando("lista"); setForm({ nombre: "", email: "", password: "", rol: "EMPLEADO" }); } catch (e) { alert(e.response?.data?.error || "Error al crear usuario"); } };
-  const editar = async () => { try { const body = { nombre: form.nombre, rol: form.rol }; if (form.password) body.password = form.password; await api.put(`/admin/usuarios/${usuarioEditar.id}`, body); cargar(); setMostrando("lista"); setUsuarioEditar(null); } catch (e) { alert(e.response?.data?.error || "Error al editar usuario"); } };
-  const abrirEditar = (u) => { setForm({ nombre: u.nombre, email: u.email, password: "", rol: u.rol }); setUsuarioEditar(u); setMostrando("editar"); };
+  const crear = async () => { try { await api.post("/admin/usuarios", form); cargar(); setMostrando("lista"); setForm({ nombre: "", email: "", password: "", rol: "EMPLEADO", pin: "" }); } catch (e) { alert(e.response?.data?.error || "Error al crear usuario"); } };
+  const editar = async () => { try { const body = { nombre: form.nombre, rol: form.rol }; if (form.password) body.password = form.password; if (form.pin) body.pin = form.pin; await api.put(`/admin/usuarios/${usuarioEditar.id}`, body); cargar(); setMostrando("lista"); setUsuarioEditar(null); } catch (e) { alert(e.response?.data?.error || "Error al editar usuario"); } };
+  const abrirEditar = (u) => { setForm({ nombre: u.nombre, email: u.email, password: "", rol: u.rol, pin: "" }); setUsuarioEditar(u); setMostrando("editar"); };
   const toggle = async (id) => { await api.patch(`/admin/usuarios/${id}/toggle`); cargar(); };
 
   if (mostrando === "nuevo" || mostrando === "editar") {
@@ -503,6 +505,7 @@ function Usuarios({ tema }) {
             <div style={s.formGrupo}><label style={s.formLabel}>Email {mostrando==="editar"&&"(no editable)"}</label><input style={{ ...s.formInput, opacity: mostrando==="editar"?0.5:1 }} value={form.email} disabled={mostrando==="editar"} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} /></div>
             <div style={s.formGrupo}><label style={s.formLabel}>{mostrando==="editar"?"Nueva contraseña (opcional)":"Contraseña"}</label><input style={s.formInput} type="password" value={form.password} placeholder={mostrando==="editar"?"Dejá vacío para no cambiar":""} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} /></div>
             <div style={s.formGrupo}><label style={s.formLabel}>Rol</label><select style={s.formInput} value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))}><option value="EMPLEADO">Empleado</option><option value="COCINA">Cocina</option><option value="DUEÑO">Dueño</option></select></div>
+            <div style={s.formGrupo}><label style={s.formLabel}>{mostrando==="editar"?"Nuevo PIN de fichaje (opcional)":"PIN de fichaje (4 a 6 dígitos)"}</label><input style={s.formInput} type="password" inputMode="numeric" maxLength={6} value={form.pin} placeholder={mostrando==="editar"?(usuarioEditar?.tienePin?"Ya tiene PIN. Dejá vacío para no cambiar":"Sin PIN asignado"):""} onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value.replace(/\D/g, "") }))} /></div>
           </div>
           <button style={s.btnPrimario} onClick={mostrando==="editar"?editar:crear}>{mostrando==="editar"?"Guardar cambios":"Crear usuario"}</button>
         </div>
@@ -516,7 +519,7 @@ function Usuarios({ tema }) {
       <div style={s.listaAdmin}>
         {usuarios.map((u) => (
           <div key={u.id} style={{ ...s.listaItem, opacity: u.activo?1:0.5 }}>
-            <div style={s.listaItemInfo}><div style={s.listaItemNombre}>{u.nombre}</div><div style={s.listaItemSub}>{u.email} · {ROLES[u.rol]}</div></div>
+            <div style={s.listaItemInfo}><div style={s.listaItemNombre}>{u.nombre}</div><div style={s.listaItemSub}>{u.email} · {ROLES[u.rol]}{u.tienePin ? " · con PIN" : ""}</div></div>
             <div style={s.listaItemAcciones}>
               <span style={{ ...s.stockPill, background: u.activo?`${tema.verde}25`:"rgba(128,128,128,0.15)", color: u.activo?tema.verde:"#888" }}>{u.activo?"Activo":"Inactivo"}</span>
               <button style={s.btnIcono} onClick={() => abrirEditar(u)}>Editar</button>
@@ -524,6 +527,48 @@ function Usuarios({ tema }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── FICHAJES ─────────────────────────────────────────────────
+
+function Fichajes({ tema }) {
+  const s = getStyles(tema);
+  const hoy = new Date().toISOString().slice(0, 10);
+  const [desde, setDesde] = useState(hoy);
+  const [hasta, setHasta] = useState(hoy);
+  const [fichajes, setFichajes] = useState([]);
+  const [error, setError] = useState("");
+
+  const cargar = useCallback(() => {
+    setError("");
+    api.get("/fichajes", { params: { desde, hasta } })
+      .then((r) => setFichajes(r.data))
+      .catch((e) => setError(e.response?.data?.error || "Error al cargar fichajes"));
+  }, [desde, hasta]);
+  useEffect(() => { cargar(); }, [cargar]);
+
+  return (
+    <div style={s.seccion}>
+      <div style={s.seccionHeader}><h2 style={s.seccionTitulo}>Fichajes ({fichajes.length})</h2></div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+        <input style={s.filtroInput} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+        <input style={s.filtroInput} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+      </div>
+      {error && <div style={{ color: tema.alertaText, marginBottom: 8 }}>{error}</div>}
+      <div style={s.listaAdmin}>
+        {fichajes.map((f) => (
+          <div key={f.id} style={s.listaItem}>
+            <div style={s.listaItemInfo}>
+              <div style={s.listaItemNombre}>{f.usuario?.nombre}</div>
+              <div style={s.listaItemSub}>{new Date(f.creadoEn).toLocaleString("es-AR")} · a {f.distanciaM ?? "?"} m del local</div>
+            </div>
+            <span style={{ ...s.stockPill, background: f.tipo === "INGRESO" ? `${tema.verde}25` : "rgba(128,128,128,0.15)", color: f.tipo === "INGRESO" ? tema.verde : "#888" }}>{f.tipo === "INGRESO" ? "Ingreso" : "Egreso"}</span>
+          </div>
+        ))}
+        {!fichajes.length && !error && <div style={s.listaItemSub}>Sin fichajes en el período.</div>}
       </div>
     </div>
   );
