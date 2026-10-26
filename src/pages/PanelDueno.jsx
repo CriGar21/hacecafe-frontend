@@ -41,6 +41,7 @@ export default function PanelDueno() {
         <div style={s.headerRight}>
           <SelectorTema />
           <span className="admin-user-chip"><span className="admin-user-avatar">{(usuario?.nombre||"U").trim().slice(0,1).toUpperCase()}</span><span><small>Sesión iniciada</small><strong>{usuario?.nombre||"Administrador"}</strong></span></span>
+          <button className="admin-action-primary" style={s.btnLogout} onClick={() => navigate("/admin/comercial")}>Promociones y juegos</button>
           <button className="admin-action-primary" style={s.btnLogout} onClick={() => navigate("/empleado")}><span aria-hidden="true">＋</span> Tomar pedido</button>
           <button style={s.btnLogout} onClick={logout}>Salir</button>
         </div>
