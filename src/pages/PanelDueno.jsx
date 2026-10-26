@@ -189,8 +189,9 @@ function Dashboard({ tema }) {
           { label: "Ganancia estimada", valor: `$${data.gananciaEstimada.toLocaleString()}`, sub: `${data.totalDia > 0 ? Math.round((data.gananciaEstimada / data.totalDia) * 100) : 0}% margen`, color: tema.accent },
           { label: "Pedidos activos", valor: `${data.pedidosActivos}`, sub: "en este momento", color: tema.verde },
           { label: "Stock bajo", valor: `${data.stockBajo.length}`, sub: "productos a reponer", color: data.stockBajo.length > 0 ? tema.alertaText : tema.verde },
-          { label: "Ticket promedio", valor: `$${data.cantidadPedidos > 0 ? Math.round(data.totalDia / data.cantidadPedidos).toLocaleString() : 0}`, sub: "por pedido", color: "#85B7EB" },
-          { label: "Ganancia total", valor: `$${margenTotal.toLocaleString()}`, sub: "sobre costo", color: tema.verde },
+          { label: "Ticket promedio", valor: `${Math.round(data.ticketPromedio ?? (data.cantidadPedidos > 0 ? data.totalDia / data.cantidadPedidos : 0)).toLocaleString("es-AR")}`, sub: "por pedido", color: "#85B7EB" },
+          { label: "Descuentos otorgados", valor: `${Number(data.descuentoTotal || 0).toLocaleString("es-AR")}`, sub: `${data.pedidosConDescuento || 0} pedidos con descuento`, color: "#E9A15B" },
+          { label: "Ganancia total", valor: `${margenTotal.toLocaleString("es-AR")}`, sub: "estimada sobre costo", color: tema.verde },
         ].map((k, i) => (
           <div key={i} style={{ ...s.kpiCard, borderTop: `3px solid ${k.color}` }}>
             <div style={s.kpiLabel}>{k.label}</div>
@@ -199,6 +200,29 @@ function Dashboard({ tema }) {
           </div>
         ))}
       </div>
+
+      {data.porUsuario?.length > 0 && (
+        <div style={s.card}>
+          <div style={s.cardHeader}>
+            <h3 style={s.cardTitulo}>Pedidos por usuario</h3>
+            <span style={s.cardSubtitulo}>Rendimiento de vendedores · {labelRango}</span>
+          </div>
+          <div className="hc-user-performance">
+            {data.porUsuario.map((u, i) => {
+              const maxPedidos = Math.max(...data.porUsuario.map((x) => x.pedidos), 1);
+              const pct = Math.round((u.pedidos / maxPedidos) * 100);
+              return <div className="hc-user-performance-row" key={u.id || u.nombre}>
+                <div className="hc-user-performance-rank">{String(i + 1).padStart(2, "0")}</div>
+                <div className="hc-user-performance-main">
+                  <div className="hc-user-performance-label"><strong>{u.nombre}</strong><span>{u.pedidos} pedidos · ${Number(u.total).toLocaleString("es-AR")}</span></div>
+                  <div className="hc-user-performance-track"><div style={{ width: pct + "%" }} /></div>
+                </div>
+                <div className="hc-user-performance-discount"><small>Descuentos</small><strong>${Number(u.descuentos || 0).toLocaleString("es-AR")}</strong></div>
+              </div>;
+            })}
+          </div>
+        </div>
+      )}
 
       {data.stockBajo.length > 0 && (
         <div style={s.alertaBox}>
