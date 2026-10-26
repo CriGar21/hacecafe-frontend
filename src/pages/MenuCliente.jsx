@@ -10,7 +10,7 @@ import {
 } from "../utils/menuConfig";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || API;
 const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
 const dinero = (n) => `$${Number(n || 0).toLocaleString("es-AR")}`;
@@ -366,7 +366,20 @@ export default function MenuCliente() {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "No se pudo enviar el pedido");
-      setPedidoEnviado({ ...data, estadoSeguimiento: "ESPERANDO_APROBACION" });
+      const itemsConfirmados = Array.isArray(data.items) && data.items.length
+        ? data.items.map((it) => {
+            const productoLocal = carrito.find((c) => String(c.id) === String(it.productoId ?? it.producto?.id));
+            const precioUnit = Number(it.precioUnit ?? it.precio ?? it.producto?.precio ?? productoLocal?.precio ?? 0);
+            return { ...it, producto: it.producto || productoLocal || {}, precioUnit, subtotal: Number(it.subtotal ?? precioUnit * Number(it.cantidad || 0)) };
+          })
+        : carrito.map((i) => ({ productoId: i.id, producto: { id: i.id, nombre: i.nombre, precio: i.precio }, cantidad: i.cantidad, precioUnit: Number(i.precio), subtotal: Number(i.precio) * i.cantidad, notas: i.nota || "" }));
+      setPedidoEnviado({
+        ...data,
+        items: itemsConfirmados,
+        subtotal: Number(data.subtotal ?? itemsConfirmados.reduce((sum, item) => sum + Number(item.subtotal || 0), 0)),
+        total: Number(data.total ?? itemsConfirmados.reduce((sum, item) => sum + Number(item.subtotal || 0), 0)),
+        estadoSeguimiento: "ESPERANDO_APROBACION",
+      });
       setCarrito([]);
       setVerCarrito(false);
     } catch (e) {
@@ -385,9 +398,33 @@ export default function MenuCliente() {
     const fijarEstado = (estado) =>
       setPedidoEnviado((prev) => (prev ? { ...prev, estadoSeguimiento: estado } : prev));
 
+    const aplicarPedidoActualizado = (p) => {
+      if (!p || String(p.id) !== String(pedidoId)) return;
+      setPedidoEnviado((prev) => {
+        if (!prev) return prev;
+        const items = Array.isArray(p.items) && p.items.length
+          ? p.items.map((it) => {
+              const previo = prev.items?.find((old) => String(old.productoId ?? old.producto?.id) === String(it.productoId ?? it.producto?.id));
+              const precioUnit = Number(it.precioUnit ?? it.precio ?? it.producto?.precio ?? previo?.precioUnit ?? 0);
+              return { ...it, producto: it.producto || previo?.producto || {}, precioUnit, subtotal: Number(it.subtotal ?? precioUnit * Number(it.cantidad || 0)) };
+            })
+          : prev.items;
+        return {
+          ...prev,
+          ...p,
+          items,
+          total: p.total != null ? Number(p.total) : items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0),
+          estadoSeguimiento: p.estado ? normalizarEstado(p.estado) : prev.estadoSeguimiento,
+        };
+      });
+    };
     socket.on("pedido_aprobado", (p) => {
-      if (p.id === pedidoId) fijarEstado("PENDIENTE");
+      if (String(p?.id) === String(pedidoId)) {
+        aplicarPedidoActualizado(p);
+        setPedidoEnviado((prev) => prev ? { ...prev, estadoSeguimiento: "PENDIENTE" } : prev);
+      }
     });
+    socket.on("pedido_modificado", aplicarPedidoActualizado);
     socket.on("pedido_rechazado", ({ pedidoId: id }) => {
       if (id === pedidoId) {
         fijarEstado("RECHAZADO");
@@ -395,8 +432,8 @@ export default function MenuCliente() {
       }
     });
     socket.on("pedido_actualizado", (p) => {
-      if (p.id !== pedidoId) return;
-      fijarEstado(normalizarEstado(p.estado));
+      if (String(p?.id) !== String(pedidoId)) return;
+      aplicarPedidoActualizado(p);
       if (["ENTREGADO", "COBRADO", "CANCELADO"].includes(p.estado)) socket.disconnect();
     });
 
