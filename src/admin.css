@@ -240,3 +240,19 @@
  .admin-modern-content .admin-form-grid{grid-template-columns:1fr!important}
 }
 @media(prefers-reduced-motion:reduce){.admin-modern-shell *{transition:none!important;animation:none!important}}
+
+
+/* Dashboard analytics: ranking de usuarios y descuentos */
+.hc-user-performance{display:flex;flex-direction:column;gap:15px;margin-top:4px}
+.hc-user-performance-row{display:flex;align-items:center;gap:13px;min-width:0;padding:4px 0}
+.hc-user-performance-rank{display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;border-radius:11px;background:rgba(213,166,94,.12);border:1px solid rgba(213,166,94,.2);color:#d5a65e;font-size:12px;font-weight:800}
+.hc-user-performance-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.hc-user-performance-label{display:flex;justify-content:space-between;align-items:center;gap:12px;min-width:0}
+.hc-user-performance-label strong{color:var(--admin-text,inherit);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-user-performance-label span{font-size:12px;opacity:.72;white-space:nowrap}
+.hc-user-performance-track{height:7px;border-radius:99px;background:rgba(213,166,94,.12);overflow:hidden}
+.hc-user-performance-track>div{height:100%;border-radius:99px;background:linear-gradient(90deg,#b97a3d,#edc982);transition:width .45s ease}
+.hc-user-performance-discount{display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:105px}
+.hc-user-performance-discount small{font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.65}
+.hc-user-performance-discount strong{font-size:13px;color:#e9a15b}
+@media(max-width:700px){.hc-user-performance-row{gap:8px}.hc-user-performance-label{align-items:flex-start;flex-direction:column;gap:3px}.hc-user-performance-label span{white-space:normal}.hc-user-performance-discount{min-width:80px}}
