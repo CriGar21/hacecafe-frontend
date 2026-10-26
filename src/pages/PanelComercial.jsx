@@ -6,7 +6,7 @@ import api from "../services/api";
 import "../admin.css";
 import "./panelComercial.css";
 
-const nuevaPromo = () => ({ nombre: "", descripcion: "", imagenUrl: "", tipo: "DESCUENTO", valor: 10, activa: true, mostrarMenu: true, desde: "", hasta: "" });
+const nuevaPromo = () => ({ nombre: "2 cafés con leche + 1 tostado", descripcion: "Compartí una pausa rica en cualquier momento del día.", imagenUrl: "", tipo: "COMBO", valor: 0, precioOferta: "", productos: [], activa: true, mostrarMenu: true, desde: "", hasta: "" });
 const dinero = n => "$" + Number(n || 0).toLocaleString("es-AR");
 const fechaInput = value => value ? new Date(value).toISOString().slice(0, 16) : "";
 
@@ -14,6 +14,8 @@ export default function PanelComercial() {
   const { logout } = useAuth();
   const { tema } = useTema();
   const [promos, setPromos] = useState([]);
+  const [productosLocal, setProductosLocal] = useState([]);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
   const [juego, setJuego] = useState(null);
   const [form, setForm] = useState(nuevaPromo);
   const [editando, setEditando] = useState(null);
@@ -23,8 +25,9 @@ export default function PanelComercial() {
 
   const cargar = async () => {
     try {
-      const [p, j] = await Promise.all([api.get("/comercial/promociones/admin"), api.get("/juegos")]);
+      const [p, j, prods] = await Promise.all([api.get("/comercial/promociones/admin"), api.get("/juegos"), api.get("/productos")]);
       setPromos(p.data);
+      setProductosLocal(prods.data);
       setJuego(j.data);
       setError("");
     } catch { setError("No se pudo cargar la configuración. Revisá la conexión e intentá nuevamente."); }
@@ -35,7 +38,7 @@ export default function PanelComercial() {
     e.preventDefault();
     setCargando(true); setError(""); setMensaje("");
     try {
-      const payload = { ...form, valor: Number(form.valor), desde: form.desde || null, hasta: form.hasta || null };
+      const payload = { ...form, valor: Number(form.valor), precioOferta: form.precioOferta === "" ? null : Number(form.precioOferta), productos: form.productos || [], desde: form.desde || null, hasta: form.hasta || null };
       if (!payload.nombre.trim()) throw new Error("El nombre de la promoción es obligatorio.");
       if (payload.valor < 0 || !Number.isFinite(payload.valor)) throw new Error("El valor debe ser un número positivo.");
       if (payload.desde && payload.hasta && new Date(payload.hasta) < new Date(payload.desde)) throw new Error("La fecha de fin debe ser posterior al inicio.");
@@ -49,7 +52,7 @@ export default function PanelComercial() {
 
   const editarPromo = p => {
     setEditando(p.id);
-    setForm({ nombre: p.nombre || "", descripcion: p.descripcion || "", imagenUrl: p.imagenUrl || "", tipo: p.tipo || "DESCUENTO", valor: Number(p.valor || 0), activa: Boolean(p.activa), mostrarMenu: Boolean(p.mostrarMenu), desde: fechaInput(p.desde), hasta: fechaInput(p.hasta) });
+    setForm({ nombre: p.nombre || "", descripcion: p.descripcion || "", imagenUrl: p.imagenUrl || "", tipo: p.tipo || "DESCUENTO", valor: Number(p.valor || 0), precioOferta: p.precioOferta == null ? "" : Number(p.precioOferta), productos: Array.isArray(p.productos) ? p.productos.map(x=>({productoId:Number(x.productoId),cantidad:Number(x.cantidad||1)})) : [], activa: Boolean(p.activa), mostrarMenu: Boolean(p.mostrarMenu), desde: fechaInput(p.desde), hasta: fechaInput(p.hasta) });
     setMensaje(""); setError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -82,13 +85,13 @@ export default function PanelComercial() {
           <form className="promo-form" onSubmit={guardarPromo}>
             <label>Nombre<input required maxLength="120" placeholder="Ej. Merienda para dos" value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})}/></label>
             <label>Descripción<textarea rows="3" placeholder="Qué incluye y cuáles son las condiciones" value={form.descripcion} onChange={e=>setForm({...form,descripcion:e.target.value})}/></label>
-            <label>Imagen de la promoción (URL)<input type="url" placeholder="https://... (podés agregarla más adelante)" value={form.imagenUrl} onChange={e=>setForm({...form,imagenUrl:e.target.value})}/></label>
+            <label>Imagen de la promoción<input type="file" accept="image/png,image/jpeg,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;const cloud=import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;const preset=import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;if(!cloud||!preset){setError("Faltan VITE_CLOUDINARY_CLOUD_NAME y VITE_CLOUDINARY_UPLOAD_PRESET en Vercel.");return;}setSubiendoImagen(true);setError("");try{const fd=new FormData();fd.append("file",file);fd.append("upload_preset",preset);fd.append("folder","hacecafe/promociones");const resp=await fetch("https://api.cloudinary.com/v1_1/"+cloud+"/image/upload",{method:"POST",body:fd});const data=await resp.json();if(!resp.ok)throw new Error(data.error?.message||"No se pudo subir la imagen");setForm(prev=>({...prev,imagenUrl:data.secure_url}));setMensaje("Imagen subida a Cloudinary.");}catch(err){setError(err.message||"Error al subir imagen.");}finally{setSubiendoImagen(false);e.target.value="";}}}/><small>{subiendoImagen?"Subiendo a Cloudinary…":"Elegí JPG, PNG o WebP desde tu PC."}</small></label><label>O pegá una URL<input type="url" placeholder="https://..." value={form.imagenUrl} onChange={e=>setForm({...form,imagenUrl:e.target.value})}/></label>
             {form.imagenUrl && <div className="promo-preview"><img src={form.imagenUrl} alt="Vista previa de la promoción" onError={e=>{e.currentTarget.style.display="none"}}/><span>Vista previa</span></div>}
             <div className="promo-form-two">
               <label>Tipo<select value={form.tipo} onChange={e=>setForm({...form,tipo:e.target.value})}><option value="DESCUENTO">Descuento porcentual (%)</option><option value="MONTO_FIJO">Descuento fijo ($)</option><option value="COMBO">Combo / precio especial</option><option value="2X1">2x1</option><option value="REGALO">Producto de regalo</option><option value="INFORMATIVA">Solo comunicar</option></select></label>
               <label>{form.tipo==="MONTO_FIJO"||form.tipo==="COMBO"?"Valor ($)":"Valor (%)"}<input type="number" min="0" step="0.01" value={form.valor} onChange={e=>setForm({...form,valor:e.target.value})}/></label>
             </div>
-            <div className="promo-form-two"><label>Desde<input type="datetime-local" value={form.desde} onChange={e=>setForm({...form,desde:e.target.value})}/></label><label>Hasta<input type="datetime-local" value={form.hasta} onChange={e=>setForm({...form,hasta:e.target.value})}/></label></div>
+            <div className="promo-form-two"><label>Precio de la promoción ($)<input type="number" min="0" step="0.01" placeholder="Ej. 6500" value={form.precioOferta} onChange={e=>setForm({...form,precioOferta:e.target.value})}/></label><label>Productos incluidos<select value="" onChange={e=>{const id=Number(e.target.value);if(!id)return;const current=form.productos||[];const found=current.find(x=>x.productoId===id);setForm({...form,productos:found?current.map(x=>x.productoId===id?{...x,cantidad:x.cantidad+1}:x):[...current,{productoId:id,cantidad:1}]});}}><option value="">Agregar producto del local…</option>{productosLocal.map(p=><option key={p.id} value={p.id}>{p.nombre} · {dinero(p.precio)} · stock {p.stockActual}</option>)}</select></label></div>{(form.productos||[]).length>0&&<div className="promo-products-selected"><strong>Contenido del combo</strong>{form.productos.map(x=>{const p=productosLocal.find(y=>y.id===x.productoId);return <div key={x.productoId}><span>{p?.nombre||"Producto"} (stock {p?.stockActual??"—"})</span><label>Cant. <input type="number" min="1" value={x.cantidad} onChange={e=>setForm({...form,productos:form.productos.map(y=>y.productoId===x.productoId?{...y,cantidad:Number(e.target.value)}:y)})}/></label><button type="button" onClick={()=>setForm({...form,productos:form.productos.filter(y=>y.productoId!==x.productoId)})}>Quitar</button></div>})}</div>}<div className="promo-form-two"><label>Desde<input type="datetime-local" value={form.desde} onChange={e=>setForm({...form,desde:e.target.value})}/></label><label>Hasta<input type="datetime-local" value={form.hasta} onChange={e=>setForm({...form,hasta:e.target.value})}/></label></div>
             <div className="promo-checks"><label><input type="checkbox" checked={form.activa} onChange={e=>setForm({...form,activa:e.target.checked})}/> Activada</label><label><input type="checkbox" checked={form.mostrarMenu} onChange={e=>setForm({...form,mostrarMenu:e.target.checked})}/> Mostrar en el menú del cliente</label></div>
             <div className="promo-actions"><button className="save-game" disabled={cargando}>{cargando?"Guardando…":editando?"Guardar cambios":"Crear promoción"}</button>{editando&&<button type="button" className="secondary-btn" onClick={()=>{setForm(nuevaPromo());setEditando(null)}}>Cancelar edición</button>}</div>
           </form>
