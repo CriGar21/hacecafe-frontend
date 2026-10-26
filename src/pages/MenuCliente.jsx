@@ -164,6 +164,9 @@ export default function MenuCliente() {
   const [enviando, setEnviando] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState("");
   const [pedidoEnviado, setPedidoEnviado] = useState(null);
+  const [motivoMozo, setMotivoMozo] = useState("Tengo una duda sobre mi pedido");
+  const [llamandoMozo, setLlamandoMozo] = useState(false);
+  const [avisoMozo, setAvisoMozo] = useState("");
 
   const seccionRefs = useRef({});
   const chipRefs = useRef({});
@@ -391,6 +394,22 @@ export default function MenuCliente() {
     }
   };
 
+  const llamarMozo = async () => {
+    if (llamandoMozo) return;
+    setLlamandoMozo(true);
+    setAvisoMozo("");
+    try {
+      const r = await fetch(`${API}/pedidos/publico/llamar-mozo`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mesa: pedidoEnviado?.mesa || mesa, numeroPedido: pedidoEnviado?.numero, motivo: motivoMozo }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "No se pudo llamar al mozo");
+      setAvisoMozo("Avisamos al personal. Enseguida se acercan.");
+    } catch (e) { setAvisoMozo(e.message || "No se pudo llamar al mozo."); }
+    finally { setLlamandoMozo(false); }
+  };
+
   // ── Seguimiento en tiempo real ──
   useEffect(() => {
     const pedidoId = pedidoEnviado?.id;
@@ -528,6 +547,15 @@ export default function MenuCliente() {
               <span>Total</span>
               <b className="mc-serif">{dinero(pedidoEnviado.total)}</b>
             </div>
+          </div>
+
+          <div style={{ marginTop: 16, padding: 16, border: "1px solid var(--borde)", borderRadius: 16, textAlign: "left" }}>
+            <strong style={{ display: "block", marginBottom: 8 }}>¿Necesitás ayuda?</strong>
+            <select aria-label="Motivo para llamar al mozo" value={motivoMozo} onChange={(e) => setMotivoMozo(e.target.value)} style={{ width: "100%", padding: 11, borderRadius: 10, border: "1px solid var(--borde)", background: "var(--card)", color: "var(--texto)", marginBottom: 8 }}>
+              <option>Tengo una duda sobre mi pedido</option><option>Necesito modificar mi pedido</option><option>Quiero consultar por un producto</option><option>Necesito asistencia en la mesa</option>
+            </select>
+            <button className="mc-cta full" type="button" disabled={llamandoMozo} onClick={llamarMozo}><span>{llamandoMozo ? "Avisando..." : "Llamar al mozo"}</span></button>
+            {avisoMozo && <p role="status" style={{ margin: "10px 0 0", fontSize: 13 }}>{avisoMozo}</p>}
           </div>
 
           {terminado && (
