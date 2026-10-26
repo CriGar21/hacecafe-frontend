@@ -896,7 +896,28 @@ function Configuracion({ tema }) {
     transfer_banco: localStorage.getItem("transfer_banco")||"",
   });
   const [guardado, setGuardado] = useState(false);
-  const guardar = () => { Object.entries(form).forEach(([k,v]) => localStorage.setItem(k,v)); setGuardado(true); setTimeout(() => setGuardado(false),2000); };
+  const [guardando, setGuardando] = useState(false);
+  const [errorGuardar, setErrorGuardar] = useState("");
+  const guardar = async () => {
+    if (guardando) return;
+    setGuardando(true);
+    setGuardado(false);
+    setErrorGuardar("");
+    try {
+      Object.entries(form).forEach(([k, v]) => localStorage.setItem(k, String(v ?? "")));
+      const { data } = await api.put("/config/negocio", form);
+      const valores = data && typeof data === "object" ? data : form;
+      Object.entries(valores).forEach(([k, v]) => {
+        if (Object.prototype.hasOwnProperty.call(form, k) && v != null) localStorage.setItem(k, String(v));
+      });
+      window.dispatchEvent(new Event("config-negocio-sincronizada"));
+      setGuardado(true);
+    } catch (e) {
+      setErrorGuardar(e.response?.data?.error || "No se pudo sincronizar la configuración. Revisá la conexión e intentá nuevamente.");
+    } finally {
+      setGuardando(false);
+    }
+  };
   const Campo = ({ campo, label, placeholder, fullWidth }) => (
     <div style={{ ...s.formGrupo, ...(fullWidth?{gridColumn:"1/-1"}:{}) }}>
       <label style={s.formLabel}>{label}</label>
@@ -939,7 +960,7 @@ function Configuracion({ tema }) {
           <Campo campo="transfer_banco" label="Banco" />
         </div>
       </div>
-      <button style={{ ...s.btnPrimario, marginTop:"4px" }} onClick={guardar}>{guardado?"✓ Guardado":"Guardar configuración"}</button>
+      <div style={{display:"flex",flexDirection:"column",gap:"8px",alignItems:"flex-start"}}><button style={{ ...s.btnPrimario, marginTop:"4px",opacity:guardando?0.7:1,cursor:guardando?"wait":"pointer" }} onClick={guardar} disabled={guardando}>{guardando?"Guardando...":guardado?"✓ Configuración guardada":"Guardar configuración"}</button>{errorGuardar&&<p role="alert" style={{margin:0,color:tema.alertaText,fontSize:"13px"}}>{errorGuardar}</p>}{guardado&&<p role="status" style={{margin:0,color:tema.verde,fontSize:"13px"}}>Los cambios se guardaron en este dispositivo y se sincronizaron con el servidor.</p>}</div>
     </div>
   );
 }
