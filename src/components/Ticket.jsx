@@ -15,6 +15,10 @@ export default function Ticket({
 }) {
   const ticketRef = useRef();
   const rs = { ...RAZON_SOCIAL_DEFAULT, ...razonSocial };
+  const subtotalPedido = Number(pedido.subtotal ?? pedido.items?.reduce((s, item) => s + Number(item.subtotal ?? (Number(item.precioUnit ?? item.precio ?? item.producto?.precio ?? 0) * Number(item.cantidad || 0))), 0) ?? 0);
+  const descuentoMonto = Number(pedido.descuentoMonto || 0);
+  const descuentoPorcentaje = Number(pedido.descuentoPorcentaje ?? (subtotalPedido > 0 ? descuentoMonto / subtotalPedido * 100 : 0));
+  const money = (valor) => `${Number(valor || 0).toLocaleString("es-AR")}`;
 
   useEffect(() => {
     const cerrarConEscape = (event) => {
@@ -138,7 +142,11 @@ export default function Ticket({
       });
 
       separator();
-      const totalStr = `TOTAL: $${Number(pedido.total).toLocaleString()}`;
+      line(`Subtotal: ${money(subtotalPedido)}`, 5, false, 9);
+      if (descuentoMonto > 0 || descuentoPorcentaje > 0) {
+        line(`Descuento (${descuentoPorcentaje.toLocaleString("es-AR", { maximumFractionDigits: 2 })}%): -${money(descuentoMonto)}`, 5, false, 9);
+      }
+      const totalStr = `TOTAL: ${money(pedido.total)}`;
       const w = doc.getTextWidth(totalStr);
       doc.setFontSize(12);
       doc.setFont("courier", "bold");
@@ -397,6 +405,14 @@ export default function Ticket({
 
             <div style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
 
+            <div style={{ display: "flex", justifyContent: "space-between", margin: "3px 0", fontSize: "11px" }}>
+              <span>Subtotal</span><span>{money(subtotalPedido)}</span>
+            </div>
+            {(descuentoMonto > 0 || descuentoPorcentaje > 0) && (
+              <div style={{ display: "flex", justifyContent: "space-between", margin: "3px 0", fontSize: "11px" }}>
+                <span>Descuento ({descuentoPorcentaje.toLocaleString("es-AR", { maximumFractionDigits: 2 })}%)</span><span>-{money(descuentoMonto)}</span>
+              </div>
+            )}
             <div
               style={{
                 display: "flex",
