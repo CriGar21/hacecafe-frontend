@@ -153,6 +153,7 @@ export default function MenuCliente() {
 
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
+  const [promociones, setPromociones] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState(false);
   const [busqueda, setBusqueda] = useState("");
@@ -187,13 +188,14 @@ export default function MenuCliente() {
         return r.json();
       });
 
-    Promise.all([pedir("/categorias"), pedir("/productos")])
-      .then(([cats, prods]) => {
+    Promise.all([pedir("/categorias"), pedir("/productos"), pedir("/comercial/promociones")])
+      .then(([cats, prods, promos]) => {
         if (!vivo) return;
         setCategorias(
           [...cats].sort((a, b) => (a.ordenDisplay ?? 999) - (b.ordenDisplay ?? 999)),
         );
         setProductos(prods);
+        setPromociones(Array.isArray(promos) ? promos : []);
       })
       .catch(() => vivo && setErrorCarga(true))
       .finally(() => vivo && setCargando(false));
@@ -678,6 +680,19 @@ export default function MenuCliente() {
       </div>
 
       <main className="mc-wrap mc-main">
+        {!termino && promociones.length > 0 && (
+          <section className="mc-promotions mc-reveal" aria-label="Promociones vigentes">
+            <div className="mc-sec-title"><div><span className="mc-eyebrow">BENEFICIOS PARA VOS</span><h2 className="mc-serif">Promociones especiales</h2></div><span>{promociones.length} activas</span></div>
+            <div className="mc-promo-grid">
+              {promociones.map(p => (
+                <article className="mc-promo-card" key={p.id}>
+                  {p.imagenUrl ? <img src={p.imagenUrl} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none"}}/> : <div className="mc-promo-art" aria-hidden="true"><span>HaceCafé</span><b>Una pausa<br/>que vale</b><i>✦</i></div>}
+                  <div className="mc-promo-copy"><span className="mc-promo-tag">{p.tipo === "INFORMATIVA" ? "NOVEDAD" : "PROMOCIÓN"}</span><h3>{p.nombre}</h3>{p.descripcion&&<p>{p.descripcion}</p>}{p.tipo==="DESCUENTO"&&<strong className="mc-promo-value">{Number(p.valor)}% de descuento</strong>}{p.tipo==="MONTO_FIJO"&&<strong className="mc-promo-value">{dinero(p.valor)} de descuento</strong>}</div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
         {cargando && (
           <div className="mc-sec">
             <div className="mc-skel" />
