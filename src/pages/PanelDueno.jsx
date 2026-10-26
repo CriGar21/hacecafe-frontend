@@ -69,7 +69,6 @@ export default function PanelDueno() {
           {seccion === "qrmesas"    && <QRMesas    tema={tema} />}
           {seccion === "apariencia" && <Apariencia tema={tema} />}
           {seccion === "config"     && <Configuracion tema={tema} />}
-          </div>
         </div>
       </div>
 
