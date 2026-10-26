@@ -99,7 +99,7 @@ export default function PanelComercial() {
             {promos.map(p=><article key={p.id} className="promo-row">
               {p.imagenUrl?<img className="promo-thumb" src={p.imagenUrl} alt="" onError={e=>{e.currentTarget.style.visibility="hidden"}}/>:<div className="promo-thumb placeholder">HC</div>}
               <div className="promo-details"><strong>{p.nombre}</strong><p>{p.descripcion||"Sin descripción"}</p><small>{p.tipo} · {p.tipo==="MONTO_FIJO"||p.tipo==="COMBO"?dinero(p.valor):p.tipo==="INFORMATIVA"?"Informativa":`${p.valor}%`}</small><div className="promo-flags"><span className={p.activa?"status on":"status"}>{p.activa?"ACTIVA":"PAUSADA"}</span><span className={p.mostrarMenu?"status on":"status"}>{p.mostrarMenu?"VISIBLE EN MENÚ":"OCULTA"}</span></div></div>
-              <div className="promo-row-actions"><button onClick={()=>editarPromo(p)}>Editar</button><button onClick={()=>togglePromo(p)}>{p.activa?"Pausar":"Activar"}</button></div>
+              <div className="promo-row-actions"><button onClick={()=>editarPromo(p)}>Editar</button><button onClick={()=>togglePromo(p)}>{p.activa?"Pausar":"Activar"}</button><button className="delete-promo-btn" onClick={async()=>{if(!window.confirm(`¿Eliminar definitivamente la promoción “${p.nombre}”?`))return;setError("");setMensaje("");try{await api.delete(`/comercial/promociones/${p.id}`);if(editando===p.id){setEditando(null);setForm(nuevaPromo());}await cargar();setMensaje("Promoción eliminada.");}catch(e){setError(e.response?.data?.error||"No se pudo eliminar la promoción.");}}}>Eliminar</button></div>
             </article>)}
             {!promos.length&&<div className="commercial-empty">Todavía no hay promociones. Creá una para empezar.</div>}
           </div>
