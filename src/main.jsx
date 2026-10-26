@@ -7,6 +7,7 @@ import "./theme.css";
 import "./App.css";
 import "./hc-polish.css";
 import "./responsive.css";
+import "./fixes.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
