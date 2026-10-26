@@ -9,7 +9,6 @@ import "./hc-polish.css";
 import "./responsive.css";
 import "./hcWorkflowBridge.js";
 import "./hcNoEmoji.js";
-import "./hcOrderRealtime.js";
 import "./hcQRRepair.jsx";
 import "./hcOrderPolicy.js";
 
