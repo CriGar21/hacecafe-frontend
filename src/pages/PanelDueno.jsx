@@ -94,10 +94,13 @@ function Dashboard({ tema }) {
   const [data, setData] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [productos, setProductos] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [desde, setDesde] = useState(hoy);
   const [hasta, setHasta] = useState(hoy);
   const [productoId, setProductoId] = useState("");
-  const [filtrosActivos, setFiltrosActivos] = useState({ desde: hoy, hasta: hoy, productoId: "" });
+  const [usuarioId, setUsuarioId] = useState("");
+  const [metodoPago, setMetodoPago] = useState("");
+  const [filtrosActivos, setFiltrosActivos] = useState({ desde: hoy, hasta: hoy, productoId: "", usuarioId: "", metodoPago: "" });
 
   const cargar = useCallback(() => {
     setCargando(true);
@@ -105,12 +108,17 @@ function Dashboard({ tema }) {
     params.append("desde", filtrosActivos.desde);
     params.append("hasta", filtrosActivos.hasta);
     if (filtrosActivos.productoId) params.append("productoId", filtrosActivos.productoId);
-    api.get(`/admin/dashboard?${params.toString()}`).then((r) => setData(r.data)).finally(() => setCargando(false));
+    if (filtrosActivos.usuarioId) params.append("usuarioId", filtrosActivos.usuarioId);
+    if (filtrosActivos.metodoPago) params.append("metodoPago", filtrosActivos.metodoPago);
+    api.get(`/admin/dashboard?${params.toString()}`).then((r) => setData(r.data)).catch((e) => { console.error("Error cargando dashboard", e); setData(null); }).finally(() => setCargando(false));
   }, [filtrosActivos]);
 
-  const buscar = () => setFiltrosActivos({ desde, hasta, productoId });
+  const buscar = () => setFiltrosActivos({ desde, hasta, productoId, usuarioId, metodoPago });
 
-  useEffect(() => { api.get("/admin/productos").then((r) => setProductos(r.data)); }, []);
+  useEffect(() => {
+    api.get("/admin/productos").then((r) => setProductos(r.data)).catch(() => setProductos([]));
+    api.get("/admin/usuarios").then((r) => setUsuarios(r.data)).catch(() => setUsuarios([]));
+  }, []);
   useEffect(() => {
     cargar();
     const socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3001", { transports: ["websocket"], reconnection: true });
@@ -138,10 +146,23 @@ function Dashboard({ tema }) {
           <div style={s.filtroGrupo}><label style={s.formLabel}>Desde</label><input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} style={s.filtroInput} /></div>
           <div style={s.filtroGrupo}><label style={s.formLabel}>Hasta</label><input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} style={s.filtroInput} /></div>
           <div style={{ ...s.filtroGrupo, flex: 2 }}>
-            <label style={s.formLabel}>Producto (opcional)</label>
+            <label style={s.formLabel}>Producto</label>
             <select value={productoId} onChange={(e) => setProductoId(e.target.value)} style={s.filtroInput}>
               <option value="">Todos los productos</option>
               {productos.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+            </select>
+          </div>
+          <div style={{ ...s.filtroGrupo, flex: 1.4 }}>
+            <label style={s.formLabel}>Usuario / vendedor</label>
+            <select value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)} style={s.filtroInput}>
+              <option value="">Todos los usuarios</option>
+              {usuarios.map((u) => <option key={u.id} value={u.id}>{u.nombre}</option>)}
+            </select>
+          </div>
+          <div style={{ ...s.filtroGrupo, flex: 1.2 }}>
+            <label style={s.formLabel}>Medio de pago</label>
+            <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)} style={s.filtroInput}>
+              <option value="">Todos</option><option value="EFECTIVO">Efectivo</option><option value="QR">QR</option><option value="TRANSFERENCIA">Transferencia</option><option value="TARJETA">Tarjeta</option>
             </select>
           </div>
           <div style={s.filtroAcciones}>
@@ -153,7 +174,7 @@ function Dashboard({ tema }) {
           <div style={{ fontSize: "12px", color: tema.gold }}>
             Mostrando: <strong>{labelRango}</strong>{" · "}
             <span style={{ color: tema.textFaded, cursor: "pointer", textDecoration: "underline" }}
-              onClick={() => { setDesde(hoy); setHasta(hoy); setProductoId(""); setFiltrosActivos({ desde: hoy, hasta: hoy, productoId: "" }); }}>
+              onClick={() => { setDesde(hoy); setHasta(hoy); setProductoId(""); setUsuarioId(""); setMetodoPago(""); setFiltrosActivos({ desde: hoy, hasta: hoy, productoId: "", usuarioId: "", metodoPago: "" }); }}>
               Volver a hoy
             </span>
           </div>
