@@ -366,13 +366,15 @@ export default function MenuCliente() {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "No se pudo enviar el pedido");
-      const itemsConfirmados = Array.isArray(data.items) && data.items.length
-        ? data.items.map((it) => {
-            const productoLocal = carrito.find((c) => String(c.id) === String(it.productoId ?? it.producto?.id));
-            const precioUnit = Number(it.precioUnit ?? it.precio ?? it.producto?.precio ?? productoLocal?.precio ?? 0);
-            return { ...it, producto: it.producto || productoLocal || {}, precioUnit, subtotal: Number(it.subtotal ?? precioUnit * Number(it.cantidad || 0)) };
-          })
-        : carrito.map((i) => ({ productoId: i.id, producto: { id: i.id, nombre: i.nombre, precio: i.precio }, cantidad: i.cantidad, precioUnit: Number(i.precio), subtotal: Number(i.precio) * i.cantidad, notas: i.nota || "" }));
+      const itemsOrigen = Array.isArray(data.items) && data.items.length ? data.items : carrito.map((i) => ({ productoId: i.id, cantidad: i.cantidad, precioUnit: i.precio, subtotal: Number(i.precio) * i.cantidad, notas: i.nota || "" }));
+      const itemsConfirmados = itemsOrigen.map((it, index) => {
+        const idProducto = it.productoId ?? it.producto?.id ?? it.id;
+        const productoLocal = carrito.find((c) => String(c.id) === String(idProducto)) || {};
+        const producto = it.producto || { id: idProducto, nombre: it.nombre || productoLocal.nombre || `Producto ${index + 1}`, precio: it.precioUnit ?? productoLocal.precio ?? 0 };
+        const precioUnit = Number(it.precioUnit ?? it.precio ?? producto.precio ?? productoLocal.precio ?? 0);
+        const cantidad = Number(it.cantidad || 0);
+        return { ...it, producto: { ...producto, nombre: producto.nombre || productoLocal.nombre || `Producto ${index + 1}` }, cantidad, precioUnit, subtotal: Number(it.subtotal ?? precioUnit * cantidad), notas: it.notas || it.nota || "" };
+      });
       setPedidoEnviado({
         ...data,
         items: itemsConfirmados,
@@ -404,9 +406,12 @@ export default function MenuCliente() {
         if (!prev) return prev;
         const items = Array.isArray(p.items) && p.items.length
           ? p.items.map((it) => {
-              const previo = prev.items?.find((old) => String(old.productoId ?? old.producto?.id) === String(it.productoId ?? it.producto?.id));
-              const precioUnit = Number(it.precioUnit ?? it.precio ?? it.producto?.precio ?? previo?.precioUnit ?? 0);
-              return { ...it, producto: it.producto || previo?.producto || {}, precioUnit, subtotal: Number(it.subtotal ?? precioUnit * Number(it.cantidad || 0)) };
+              const idProducto = it.productoId ?? it.producto?.id ?? it.id;
+              const previo = prev.items?.find((old) => String(old.productoId ?? old.producto?.id ?? old.id) === String(idProducto));
+              const producto = it.producto || previo?.producto || { nombre: it.nombre || previo?.nombre || "Producto" };
+              const precioUnit = Number(it.precioUnit ?? it.precio ?? producto.precio ?? previo?.precioUnit ?? 0);
+              const cantidad = Number(it.cantidad || 0);
+              return { ...it, producto: { ...producto, nombre: producto.nombre || it.nombre || previo?.producto?.nombre || "Producto" }, cantidad, precioUnit, subtotal: Number(it.subtotal ?? precioUnit * cantidad) };
             })
           : prev.items;
         return {
@@ -514,11 +519,9 @@ export default function MenuCliente() {
 
           <div className="mc-resumen">
             {pedidoEnviado.items?.map((item) => (
-              <div className="mc-resumen-row" key={item.id}>
-                <span>
-                  {item.cantidad} × {item.producto?.nombre}
-                </span>
-                <span>{dinero(item.subtotal)}</span>
+              <div className="mc-resumen-row" key={item.id || item.productoId || item.producto?.id}>
+                <span>{item.cantidad} × {item.producto?.nombre || item.nombre || "Producto"}</span>
+                <span>{dinero(item.subtotal ?? Number(item.precioUnit || 0) * Number(item.cantidad || 0))}</span>
               </div>
             ))}
             <div className="mc-resumen-total">
