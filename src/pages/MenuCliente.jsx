@@ -1374,6 +1374,9 @@ const CSS = `
   .mc .mc-reveal { opacity: 1; transform: none; transition: none; }
 }
 
+.mc-promotions{padding:26px 0 10px}.mc-promo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.mc-promo-card{overflow:hidden;border:1px solid rgba(204,153,92,.28);border-radius:18px;background:linear-gradient(135deg,#2b1b10,#180e08);box-shadow:0 12px 28px rgba(0,0,0,.16)}.mc-promo-card>img{display:block;width:100%;height:165px;object-fit:cover}.mc-promo-art{height:165px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:10px;padding:22px;background:radial-gradient(circle at 80% 25%,rgba(231,181,110,.4),transparent 36%),linear-gradient(135deg,#54351d,#1b1009);color:#f7dfbb}.mc-promo-art span{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#e7b56e}.mc-promo-art b{font:400 32px/1 Georgia,serif}.mc-promo-art i{position:absolute;align-self:flex-end;font-size:34px;color:#e7b56e}.mc-promo-copy{padding:16px 18px 19px}.mc-promo-tag{font-size:9px;letter-spacing:.18em;font-weight:800;color:#e7b56e}.mc-promo-copy h3{margin:7px 0;color:#f8e9d6;font:500 23px/1.1 Georgia,serif}.mc-promo-copy p{margin:8px 0;color:#cdb9a2;font-size:13px;line-height:1.55}.mc-promo-value{display:inline-block;margin-top:5px;color:#edbc7b;font-size:13px}
+@media(max-width:600px){.mc-promo-grid{grid-template-columns:1fr}.mc-promo-card>img,.mc-promo-art{height:145px}.mc-promo-copy h3{font-size:21px}}
+
 `;
 
 function Estilos() {
