@@ -157,6 +157,7 @@ export default function MenuCliente() {
   const [juego, setJuego] = useState(null);
   const [promoPopup, setPromoPopup] = useState(null);
   const [promoDetalle, setPromoDetalle] = useState(null);
+  const [promocionSeleccionada, setPromocionSeleccionada] = useState(null);
   const [jugando, setJugando] = useState(false);
   const [resultadoJuego, setResultadoJuego] = useState(null);
   const [errorJuego, setErrorJuego] = useState("");
@@ -376,6 +377,7 @@ export default function MenuCliente() {
             cantidad: i.cantidad,
             notas: i.nota,
           })),
+          promocionId: promocionSeleccionada?.id || null,
         }),
       });
       const data = await r.json();
@@ -397,6 +399,7 @@ export default function MenuCliente() {
         estadoSeguimiento: "ESPERANDO_APROBACION",
       });
       setCarrito([]);
+      setPromocionSeleccionada(null);
       setVerCarrito(false);
     } catch (e) {
       setErrorEnvio(e.message || "No se pudo enviar el pedido. Probá de nuevo.");
@@ -425,6 +428,7 @@ export default function MenuCliente() {
       const prod = productos.find(x => Number(x.id) === Number(comp.productoId));
       if (!prod || agotado(prod) || maximoDe(prod) < Number(comp.cantidad || 1)) { setPromoDetalle(null); window.alert("La promoción ya no está disponible por falta de stock."); return; }
     }
+    setPromocionSeleccionada(promo);
     componentes.forEach(comp => {
       const prod = productos.find(x => Number(x.id) === Number(comp.productoId));
       const cantidad = Number(comp.cantidad || 1); const actual = itemEn(prod.id)?.cantidad || 0;
