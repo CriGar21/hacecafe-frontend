@@ -484,15 +484,15 @@ function Usuarios({ tema }) {
   const [usuarios, setUsuarios] = useState([]);
   const [mostrando, setMostrando] = useState("lista");
   const [usuarioEditar, setUsuarioEditar] = useState(null);
-  const [form, setForm] = useState({ nombre: "", email: "", password: "", rol: "EMPLEADO", pin: "" });
+  const [form, setForm] = useState({ nombre: "", email: "", password: "", rol: "EMPLEADO" });
   const ROLES = { DUEÑO: "Dueño", EMPLEADO: "Empleado", COCINA: "Cocina" };
 
   const cargar = useCallback(() => { api.get("/admin/usuarios").then((r) => setUsuarios(r.data)); }, []);
   useEffect(() => { cargar(); }, [cargar]);
 
-  const crear = async () => { try { await api.post("/admin/usuarios", form); cargar(); setMostrando("lista"); setForm({ nombre: "", email: "", password: "", rol: "EMPLEADO", pin: "" }); } catch (e) { alert(e.response?.data?.error || "Error al crear usuario"); } };
-  const editar = async () => { try { const body = { nombre: form.nombre, rol: form.rol }; if (form.password) body.password = form.password; if (form.pin) body.pin = form.pin; await api.put(`/admin/usuarios/${usuarioEditar.id}`, body); cargar(); setMostrando("lista"); setUsuarioEditar(null); } catch (e) { alert(e.response?.data?.error || "Error al editar usuario"); } };
-  const abrirEditar = (u) => { setForm({ nombre: u.nombre, email: u.email, password: "", rol: u.rol, pin: "" }); setUsuarioEditar(u); setMostrando("editar"); };
+  const crear = async () => { try { await api.post("/admin/usuarios", form); cargar(); setMostrando("lista"); setForm({ nombre: "", email: "", password: "", rol: "EMPLEADO" }); } catch (e) { alert(e.response?.data?.error || "Error al crear usuario"); } };
+  const editar = async () => { try { const body = { nombre: form.nombre, rol: form.rol }; if (form.password) body.password = form.password; await api.put(`/admin/usuarios/${usuarioEditar.id}`, body); cargar(); setMostrando("lista"); setUsuarioEditar(null); } catch (e) { alert(e.response?.data?.error || "Error al editar usuario"); } };
+  const abrirEditar = (u) => { setForm({ nombre: u.nombre, email: u.email, password: "", rol: u.rol }); setUsuarioEditar(u); setMostrando("editar"); };
   const toggle = async (id) => { await api.patch(`/admin/usuarios/${id}/toggle`); cargar(); };
 
   if (mostrando === "nuevo" || mostrando === "editar") {
@@ -505,7 +505,6 @@ function Usuarios({ tema }) {
             <div style={s.formGrupo}><label style={s.formLabel}>Email {mostrando==="editar"&&"(no editable)"}</label><input style={{ ...s.formInput, opacity: mostrando==="editar"?0.5:1 }} value={form.email} disabled={mostrando==="editar"} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} /></div>
             <div style={s.formGrupo}><label style={s.formLabel}>{mostrando==="editar"?"Nueva contraseña (opcional)":"Contraseña"}</label><input style={s.formInput} type="password" value={form.password} placeholder={mostrando==="editar"?"Dejá vacío para no cambiar":""} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} /></div>
             <div style={s.formGrupo}><label style={s.formLabel}>Rol</label><select style={s.formInput} value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))}><option value="EMPLEADO">Empleado</option><option value="COCINA">Cocina</option><option value="DUEÑO">Dueño</option></select></div>
-            <div style={s.formGrupo}><label style={s.formLabel}>{mostrando==="editar"?"Nuevo PIN de fichaje (opcional)":"PIN de fichaje (4 a 6 dígitos)"}</label><input style={s.formInput} type="password" inputMode="numeric" maxLength={6} value={form.pin} placeholder={mostrando==="editar"?(usuarioEditar?.tienePin?"Ya tiene PIN. Dejá vacío para no cambiar":"Sin PIN asignado"):""} onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value.replace(/\D/g, "") }))} /></div>
           </div>
           <button style={s.btnPrimario} onClick={mostrando==="editar"?editar:crear}>{mostrando==="editar"?"Guardar cambios":"Crear usuario"}</button>
         </div>
@@ -519,7 +518,7 @@ function Usuarios({ tema }) {
       <div style={s.listaAdmin}>
         {usuarios.map((u) => (
           <div key={u.id} style={{ ...s.listaItem, opacity: u.activo?1:0.5 }}>
-            <div style={s.listaItemInfo}><div style={s.listaItemNombre}>{u.nombre}</div><div style={s.listaItemSub}>{u.email} · {ROLES[u.rol]}{u.tienePin ? " · con PIN" : ""}</div></div>
+            <div style={s.listaItemInfo}><div style={s.listaItemNombre}>{u.nombre}</div><div style={s.listaItemSub}>{u.email} · {ROLES[u.rol]}</div></div>
             <div style={s.listaItemAcciones}>
               <span style={{ ...s.stockPill, background: u.activo?`${tema.verde}25`:"rgba(128,128,128,0.15)", color: u.activo?tema.verde:"#888" }}>{u.activo?"Activo":"Inactivo"}</span>
               <button style={s.btnIcono} onClick={() => abrirEditar(u)}>Editar</button>
@@ -533,43 +532,186 @@ function Usuarios({ tema }) {
 }
 
 // ─── FICHAJES ─────────────────────────────────────────────────
+// Asistencia por día: para cada empleado, hora de ingreso y de salida.
+
+const fechaLocal = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dia}`;
+};
+const horaCorta = (iso) =>
+  new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
+const duracionTexto = (ms) => {
+  const min = Math.max(0, Math.round(ms / 60000));
+  return `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, "0")} min`;
+};
+
+// Une cada INGRESO con el EGRESO siguiente del mismo empleado y agrupa por día
+function armarAsistencia(fichajes) {
+  const porUsuario = {};
+  [...fichajes]
+    .sort((a, b) => new Date(a.creadoEn) - new Date(b.creadoEn))
+    .forEach((f) => {
+      (porUsuario[f.usuarioId] = porUsuario[f.usuarioId] || { nombre: f.usuario?.nombre || "Empleado", turnos: [] });
+      const turnos = porUsuario[f.usuarioId].turnos;
+      const ultimo = turnos[turnos.length - 1];
+      if (f.tipo === "INGRESO") turnos.push({ ingreso: f.creadoEn, egreso: null });
+      else if (ultimo && !ultimo.egreso && ultimo.ingreso) ultimo.egreso = f.creadoEn;
+      else turnos.push({ ingreso: null, egreso: f.creadoEn });
+    });
+
+  const dias = {};
+  Object.values(porUsuario).forEach(({ nombre, turnos }) => {
+    turnos.forEach((t) => {
+      const clave = fechaLocal(new Date(t.ingreso || t.egreso));
+      dias[clave] = dias[clave] || {};
+      (dias[clave][nombre] = dias[clave][nombre] || []).push(t);
+    });
+  });
+  return Object.keys(dias)
+    .sort()
+    .reverse()
+    .map((clave) => ({
+      clave,
+      empleados: Object.entries(dias[clave])
+        .map(([nombre, turnos]) => ({ nombre, turnos }))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    }));
+}
+
+// Genera un CSV que Excel abre directo (separador ";" y acentos correctos)
+function asistenciaACsv(asistencia) {
+  const celda = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const hhmm = (ms) => {
+    const min = Math.max(0, Math.round(ms / 60000));
+    return `${Math.floor(min / 60)}:${String(min % 60).padStart(2, "0")}`;
+  };
+  const filas = [["Fecha", "Empleado", "Ingreso", "Salida", "Horas trabajadas"]];
+  [...asistencia].reverse().forEach((dia) => {
+    const [y, m, d] = dia.clave.split("-");
+    dia.empleados.forEach((emp) => {
+      emp.turnos.forEach((t) => {
+        filas.push([
+          `${d}/${m}/${y}`,
+          emp.nombre,
+          t.ingreso ? horaCorta(t.ingreso) : "",
+          t.egreso ? horaCorta(t.egreso) : "",
+          t.ingreso && t.egreso ? hhmm(new Date(t.egreso) - new Date(t.ingreso)) : "",
+        ]);
+      });
+    });
+  });
+  return "\uFEFF" + filas.map((f) => f.map(celda).join(";")).join("\r\n");
+}
 
 function Fichajes({ tema }) {
   const s = getStyles(tema);
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = fechaLocal(new Date());
   const [desde, setDesde] = useState(hoy);
   const [hasta, setHasta] = useState(hoy);
   const [fichajes, setFichajes] = useState([]);
   const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(false);
 
   const cargar = useCallback(() => {
     setError("");
-    api.get("/fichajes", { params: { desde, hasta } })
+    setCargando(true);
+    api
+      .get("/fichajes", {
+        params: {
+          // Se arma el rango con la hora local del dueño (no UTC)
+          desde: new Date(`${desde}T00:00:00`).toISOString(),
+          hasta: new Date(`${hasta}T23:59:59.999`).toISOString(),
+        },
+      })
       .then((r) => setFichajes(r.data))
-      .catch((e) => setError(e.response?.data?.error || "Error al cargar fichajes"));
+      .catch((e) =>
+        setError(
+          e.response?.data?.error ||
+            (e.response
+              ? `El servidor respondió con error ${e.response.status}`
+              : "No se pudo conectar con el servidor"),
+        ),
+      )
+      .finally(() => setCargando(false));
   }, [desde, hasta]);
   useEffect(() => { cargar(); }, [cargar]);
 
+  const rango = (dias) => {
+    const fin = new Date();
+    const ini = new Date();
+    ini.setDate(ini.getDate() - dias);
+    setDesde(fechaLocal(ini));
+    setHasta(fechaLocal(fin));
+  };
+
+  const asistencia = armarAsistencia(fichajes);
+
+  const descargar = () => {
+    const blob = new Blob([asistenciaACsv(asistencia)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = `asistencia_${desde}_a_${hasta}.csv`;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={s.seccion}>
-      <div style={s.seccionHeader}><h2 style={s.seccionTitulo}>Fichajes ({fichajes.length})</h2></div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-        <input style={s.filtroInput} type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
-        <input style={s.filtroInput} type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+      <div style={s.seccionHeader}><h2 style={s.seccionTitulo}>Asistencia del personal</h2></div>
+
+      <div style={s.filtrosCard}>
+        <div style={s.filtrosRow}>
+          <div style={s.filtroGrupo}><label style={s.formLabel}>Desde</label><input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} style={s.filtroInput} /></div>
+          <div style={s.filtroGrupo}><label style={s.formLabel}>Hasta</label><input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} style={s.filtroInput} /></div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          <button style={{ ...s.btnSecundario, padding: "6px 12px", fontSize: "13px" }} onClick={() => rango(0)}>Hoy</button>
+          <button style={{ ...s.btnSecundario, padding: "6px 12px", fontSize: "13px" }} onClick={() => rango(7)}>Últimos 7 días</button>
+          <button style={{ ...s.btnSecundario, padding: "6px 12px", fontSize: "13px" }} onClick={() => rango(30)}>Últimos 30 días</button>
+          {asistencia.length > 0 && (
+            <button style={{ ...s.btnPrimario, padding: "6px 12px", fontSize: "13px", marginLeft: "auto" }} onClick={descargar}>Descargar Excel (CSV)</button>
+          )}
+        </div>
       </div>
-      {error && <div style={{ color: tema.alertaText, marginBottom: 8 }}>{error}</div>}
-      <div style={s.listaAdmin}>
-        {fichajes.map((f) => (
-          <div key={f.id} style={s.listaItem}>
-            <div style={s.listaItemInfo}>
-              <div style={s.listaItemNombre}>{f.usuario?.nombre}</div>
-              <div style={s.listaItemSub}>{new Date(f.creadoEn).toLocaleString("es-AR")} · a {f.distanciaM ?? "?"} m del local</div>
-            </div>
-            <span style={{ ...s.stockPill, background: f.tipo === "INGRESO" ? `${tema.verde}25` : "rgba(128,128,128,0.15)", color: f.tipo === "INGRESO" ? tema.verde : "#888" }}>{f.tipo === "INGRESO" ? "Ingreso" : "Egreso"}</span>
+
+      {error && <div style={{ color: tema.alertaText, margin: "12px 0" }}>{error}</div>}
+      {cargando && <div style={s.listaItemSub}>Cargando...</div>}
+      {!cargando && !error && !asistencia.length && <div style={{ ...s.listaItemSub, marginTop: 12 }}>No hay fichajes en este período.</div>}
+
+      {asistencia.map((dia) => (
+        <div key={dia.clave} style={{ marginTop: 16 }}>
+          <div style={{ fontWeight: 800, color: tema.gold, margin: "0 0 8px", textTransform: "capitalize" }}>
+            {new Date(`${dia.clave}T12:00:00`).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </div>
-        ))}
-        {!fichajes.length && !error && <div style={s.listaItemSub}>Sin fichajes en el período.</div>}
-      </div>
+          <div style={s.listaAdmin}>
+            {dia.empleados.map((emp) => {
+              const totalMs = emp.turnos.reduce((acc, t) => (t.ingreso && t.egreso ? acc + (new Date(t.egreso) - new Date(t.ingreso)) : acc), 0);
+              return (
+                <div key={emp.nombre} style={s.listaItem}>
+                  <div style={s.listaItemInfo}>
+                    <div style={s.listaItemNombre}>{emp.nombre}</div>
+                    {emp.turnos.map((t, i) => (
+                      <div key={i} style={s.listaItemSub}>
+                        Ingreso: <strong>{t.ingreso ? horaCorta(t.ingreso) : "sin registro"}</strong>
+                        {" · "}
+                        Salida: <strong>{t.egreso ? horaCorta(t.egreso) : "sin registrar"}</strong>
+                      </div>
+                    ))}
+                  </div>
+                  {totalMs > 0 && (
+                    <span style={{ ...s.stockPill, background: tema.verdeBg, color: tema.verde }}>{duracionTexto(totalMs)}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
