@@ -33,7 +33,8 @@ export default function Login() {
     try {
       const usuario = await login(email, password);
       if (usuario.rol === "DUENO") navigate("/admin", { replace: true });
-      else navigate("/fichaje", { replace: true });
+      else if (usuario.rol === "COCINA") navigate("/cocina", { replace: true });
+      else navigate("/empleado", { replace: true });
     } catch {
       setError("No pudimos validar tus datos. Revisá el email y la contraseña. Si todavía no tenés cuenta, pedile al dueño que te registre desde Administración > Usuarios.");
     } finally {
