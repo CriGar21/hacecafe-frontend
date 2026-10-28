@@ -31,7 +31,9 @@ export default function Login() {
     setCargando(true);
     setError("");
     try {
-      await login(email, password);
+      const usuario = await login(email, password);
+      if (usuario.rol === "DUENO") navigate("/admin", { replace: true });
+      else navigate("/fichaje", { replace: true });
     } catch {
       setError("No pudimos validar tus datos. Revisá el email y la contraseña.");
     } finally {
