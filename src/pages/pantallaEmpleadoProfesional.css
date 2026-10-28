@@ -42,3 +42,15 @@
 @media(max-width:600px){.hc-edit-modal{padding:14px}.hc-edit-items>div{grid-template-columns:1fr auto}.hc-edit-items>div>strong{grid-column:1/-1;text-align:right}.hc-edit-modal>footer{align-items:stretch;flex-direction:column}}
 
 .hc-edit-search{width:100%;box-sizing:border-box;margin:10px 0;padding:11px 13px;border:1px solid #554635;border-radius:10px;background:#211b15;color:#f0e6d3;font:inherit;outline:none}.hc-edit-search:focus{border-color:#c8913a;box-shadow:0 0 0 3px #c8913a22}.hc-edit-no-results{display:block;padding:12px;color:#b9a58c;font-size:13px}
+
+/* Menú compacto de cuenta: mantiene el cierre de sesión junto a la campanita. */
+.pos-user-menu-wrap{position:relative;display:flex;align-items:center}
+.pos-user-trigger{cursor:pointer}
+.pos-user-menu{position:absolute;right:0;top:calc(100% + 10px);width:220px;background:#211c16;border:1px solid #493b2d;border-radius:14px;box-shadow:0 18px 45px #0008;overflow:hidden;z-index:1001;padding:6px}
+.pos-user-menu-heading{display:flex;flex-direction:column;gap:4px;padding:12px;border-bottom:1px solid #342b22;margin-bottom:5px}
+.pos-user-menu-heading strong{font-size:13px;color:#f0e6d3;overflow-wrap:anywhere}
+.pos-user-menu-heading small{font-size:11px;color:#9a8870}
+.pos-header .pos-user-menu>button{display:block;width:100%;text-align:left;padding:11px 12px;border:0;border-radius:8px;background:transparent;color:#f0e6d3;font-size:12px;cursor:pointer}
+.pos-header .pos-user-menu>button:hover{background:#30271f}
+.pos-header .pos-user-menu>button.pos-user-logout{color:#ffb0a8}
+@media(max-width:600px){.pos-user-menu{position:fixed;top:76px;right:12px;width:220px;max-width:calc(100vw - 24px)}}
