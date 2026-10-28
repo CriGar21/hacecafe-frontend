@@ -22,7 +22,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/menu" element={<MenuCliente />} />
-        <Route path="/fichaje" element={<PantallaFichaje />} />
+        <Route path="/fichaje" element={<RutaProtegida roles={["EMPLEADO", "COCINA", "DUENO"]}><PantallaFichaje /></RutaProtegida>} />
         <Route path="/empleado" element={<RutaProtegida roles={["EMPLEADO", "DUENO"]}><PantallaEmpleadoProfesional /></RutaProtegida>} />
         <Route path="/cocina" element={<RutaProtegida roles={["COCINA", "DUENO", "EMPLEADO"]}><PantallaCocina /></RutaProtegida>} />
         <Route path="/admin/comercial" element={<RutaProtegida roles={["DUENO"]}><PanelComercial /></RutaProtegida>} />
