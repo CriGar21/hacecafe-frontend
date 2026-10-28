@@ -74,7 +74,7 @@ export default function PanelComercial() {
   const totalProbabilidad = useMemo(() => (juego?.premios || []).reduce((s, p) => s + Number(p.probabilidad || 0), 0), [juego]);
 
   return <div className="commercial-shell">
-    <header className="commercial-header"><div><strong>HaceCafé</strong><span>Administración comercial</span></div><div><SelectorTema/><button onClick={logout}>Salir</button></div></header>
+    <header className="commercial-header"><div><strong>HaceCafé</strong><span>Administración comercial</span></div><div className="commercial-header-actions"><SelectorTema/><button type="button" onClick={() => window.location.assign("/admin")}>Volver al panel</button><button onClick={logout}>Salir</button></div></header>
     <main className="commercial-main">
       <div className="commercial-heading"><div><small>ADMINISTRACIÓN</small><h1>Promociones, descuentos y juegos</h1><p>Armá las campañas ahora; las imágenes y el diseño visual se pueden ir ajustando después.</p></div></div>
       {error && <div className="commercial-alert error" role="alert">{error}</div>}
