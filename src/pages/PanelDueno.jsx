@@ -636,7 +636,12 @@ function Fichajes({ tema }) {
       )
       .finally(() => setCargando(false));
   }, [desde, hasta]);
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+    // Mantiene la asistencia del administrador sincronizada con los fichajes recientes.
+    const refresco = window.setInterval(cargar, 15000);
+    return () => window.clearInterval(refresco);
+  }, [cargar]);
 
   const rango = (dias) => {
     const fin = new Date();
@@ -673,6 +678,7 @@ function Fichajes({ tema }) {
           <button style={{ ...s.btnSecundario, padding: "6px 12px", fontSize: "13px" }} onClick={() => rango(0)}>Hoy</button>
           <button style={{ ...s.btnSecundario, padding: "6px 12px", fontSize: "13px" }} onClick={() => rango(7)}>Últimos 7 días</button>
           <button style={{ ...s.btnSecundario, padding: "6px 12px", fontSize: "13px" }} onClick={() => rango(30)}>Últimos 30 días</button>
+          <button style={{ ...s.btnSecundario, padding: "6px 12px", fontSize: "13px" }} onClick={cargar} disabled={cargando}>{cargando ? "Actualizando..." : "Actualizar"}</button>
           {asistencia.length > 0 && (
             <button style={{ ...s.btnPrimario, padding: "6px 12px", fontSize: "13px", marginLeft: "auto" }} onClick={descargar}>Descargar Excel (CSV)</button>
           )}
