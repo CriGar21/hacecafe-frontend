@@ -127,3 +127,34 @@ body:has(.mc-promo-pop-overlay) .mc-game-card {
     min-height: 132px !important;
   }
 }
+
+
+/* Ruleta de premios: rueda real, legible y con estado de giro. */
+.mc-game-card { position:relative; overflow:hidden; padding:clamp(20px,4vw,32px); text-align:center; background:radial-gradient(circle at 50% 45%,#53351f 0,#24160e 55%,#160d08 100%); }
+.mc-game-card::before { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 50% 0,rgba(244,205,135,.15),transparent 48%); }
+.mc-game-card > * { position:relative; }
+.mc-game-card .mc-game-kicker { display:inline-block; padding:7px 11px; border:1px solid #d9ad67; border-radius:999px; background:#211309; color:#f3ce8b; }
+.mc-game-card h2 { color:#fff0d3; font-size:clamp(25px,4vw,34px); }
+.mc-game-card > p { max-width:460px; margin:10px auto 18px; }
+.mc-wheel-wrap { width:min(250px,70vw); aspect-ratio:1; position:relative; margin:28px auto 24px; filter:drop-shadow(0 14px 22px #0008); }
+.mc-wheel { width:100%; height:100%; position:relative; overflow:hidden; border:8px solid #f1d39a; border-radius:50%; background:conic-gradient(#a95336 0deg 45deg,#f1c36b 45deg 90deg,#345d4a 90deg 135deg,#f4dfb1 135deg 180deg,#a95336 180deg 225deg,#f1c36b 225deg 270deg,#345d4a 270deg 315deg,#f4dfb1 315deg 360deg); box-shadow:inset 0 0 0 3px #744b26,inset 0 0 0 7px #fff4d7; transition:transform 4s cubic-bezier(.12,.72,.12,1); }
+.mc-wheel-wrap.is-spinning .mc-wheel { transform:rotate(1440deg); }
+.mc-wheel::before { content:""; position:absolute; inset:0; border-radius:50%; background:repeating-conic-gradient(from -1deg,transparent 0deg 43.8deg,rgba(52,29,13,.65) 44deg 45deg); }
+.mc-wheel-pointer { position:absolute; z-index:3; top:-12px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:15px solid transparent; border-right:15px solid transparent; border-top:32px solid #fff0c7; filter:drop-shadow(0 3px 3px #0008); }
+.mc-wheel-label { position:absolute; z-index:2; left:50%; top:50%; color:#29180c; font-size:clamp(11px,2.5vw,14px); font-weight:1000; text-shadow:0 1px 0 #fff8; transform-origin:0 0; }
+.mc-wheel-label.label-1 { transform:rotate(22.5deg) translate(48px,-8px); }
+.mc-wheel-label.label-2 { transform:rotate(67.5deg) translate(48px,-8px); }
+.mc-wheel-label.label-3 { transform:rotate(112.5deg) translate(45px,-8px); }
+.mc-wheel-label.label-4 { transform:rotate(157.5deg) translate(48px,-8px); }
+.mc-wheel-label.label-5 { transform:rotate(202.5deg) translate(45px,-8px); }
+.mc-wheel-label.label-6 { transform:rotate(247.5deg) translate(48px,-8px); }
+.mc-wheel-label.label-7 { transform:rotate(292.5deg) translate(48px,-8px); }
+.mc-wheel-label.label-8 { transform:rotate(337.5deg) translate(48px,-8px); }
+.mc-wheel-center { position:absolute; z-index:4; inset:39%; display:grid; place-items:center; border:4px solid #f7d99e; border-radius:50%; background:radial-gradient(circle,#4b2c17,#1a1009); color:#ffedc9; font:900 20px Georgia,serif; box-shadow:0 3px 10px #0007; }
+.mc-game-card .mc-wheel-play { display:inline-flex; align-items:center; justify-content:center; min-width:190px; padding:14px 24px; border:1px solid #ffdfa0; border-radius:999px; background:linear-gradient(135deg,#f6d28d,#d89a43); color:#28170a; font-size:15px; font-weight:900; box-shadow:0 8px 22px #0004; cursor:pointer; transition:transform .18s,filter .18s; }
+.mc-game-card .mc-wheel-play:hover:not(:disabled) { transform:translateY(-2px); filter:brightness(1.06); }
+.mc-game-card .mc-wheel-play:disabled { opacity:.72; cursor:wait; }
+.mc-game-result { display:grid; gap:8px; width:min(320px,100%); margin:20px auto 0; padding:20px; border:1px solid #eac681; border-radius:16px; background:#170e08; }
+.mc-game-result span { color:#eac681; font-size:10px; letter-spacing:.16em; font-weight:900; }
+.mc-game-result strong { font-size:clamp(24px,5vw,34px); letter-spacing:.08em; color:#fff0d3; }
+.mc-game-result small { color:#d5bda0; }
