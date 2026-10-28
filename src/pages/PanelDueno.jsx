@@ -919,7 +919,7 @@ function QRMesas({ tema }) {
             <div style={{ fontSize:"11px", fontWeight:"700", color:tema.textFaded, letterSpacing:"1.5px", textTransform:"uppercase" }}>{nombreLocal}</div>
             <div style={{ fontSize:"1.5rem", fontWeight:"900", color:tema.gold, fontFamily:"Georgia, serif" }}>Mesa {n}</div>
             <div style={{ width:"40px", height:"2px", background:tema.gold, borderRadius:"2px" }} />
-            <div style={{ background:"#fff", borderRadius:"10px", padding:"14px", display:"flex", alignItems:"center", justifyContent:"center" }}><QRCodeSVG id={`qr-mesa-${n}`} value={`${dominio.replace(/\\/+$/, "")}/menu?mesa=${n}`} size={220} bgColor="#ffffff" fgColor="#111111" level="H" includeMargin /></div>
+            <div style={{ background:"#fff", borderRadius:"10px", padding:"14px", display:"flex", alignItems:"center", justifyContent:"center" }}><QRCodeSVG id={`qr-mesa-${n}`} value={`${dominio.replace(/\/+$/, "")}/menu?mesa=${n}`} size={220} bgColor="#ffffff" fgColor="#111111" level="H" includeMargin /></div>
             <div style={{ fontSize:"11px", color:tema.textFaded }}>Escaneá para pedir</div>
             <div style={{ display:"flex", gap:"8px", width:"100%" }}>
               <button style={{ flex:1, ...s.btnSecundario, fontSize:"12px", padding:"8px 4px" }} onClick={() => descargarSVG(n)}>↓ SVG</button>
