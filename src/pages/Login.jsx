@@ -35,7 +35,7 @@ export default function Login() {
       if (usuario.rol === "DUENO") navigate("/admin", { replace: true });
       else navigate("/fichaje", { replace: true });
     } catch {
-      setError("No pudimos validar tus datos. Revisá el email y la contraseña.");
+      setError("No pudimos validar tus datos. Revisá el email y la contraseña. Si todavía no tenés cuenta, pedile al dueño que te registre desde Administración > Usuarios.");
     } finally {
       setCargando(false);
     }
