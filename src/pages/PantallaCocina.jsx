@@ -4,6 +4,8 @@ import { io } from "socket.io-client";
 import api from "../services/api";
 import { useTema } from "../context/ThemeContext";
 import SelectorTema from "../components/SelectorTema";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const ESTADOS_COCINA = {
   PENDIENTE: {
@@ -44,6 +46,8 @@ const filtrarCocina = (p) =>
 
 export default function PantallaCocina() {
   const { tema } = useTema();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [pedidos, setPedidos] = useState([]);
   const [conectado, setConectado] = useState(false);
   const [pedidoDetalle, setPedidoDetalle] = useState(null);
@@ -193,8 +197,38 @@ export default function PantallaCocina() {
             HaceCafe — pedidos activos
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
           <SelectorTema />
+          <button
+            style={{
+              background: tema.btnActivo,
+              border: `1px solid ${tema.borderFaded}`,
+              borderRadius: "8px",
+              padding: "6px 14px",
+              color: tema.text,
+              fontSize: "13px",
+              cursor: "pointer",
+              fontWeight: "600",
+            }}
+            onClick={() => navigate("/fichaje")}
+          >
+            Fichar ingreso/salida
+          </button>
+          <button
+            style={{
+              background: "transparent",
+              border: `1px solid ${tema.borderFaded}`,
+              borderRadius: "8px",
+              padding: "6px 14px",
+              color: tema.alertaText,
+              fontSize: "13px",
+              cursor: "pointer",
+              fontWeight: "600",
+            }}
+            onClick={logout}
+          >
+            Cerrar sesión
+          </button>
           <button
             style={{
               background: tema.btnActivo,

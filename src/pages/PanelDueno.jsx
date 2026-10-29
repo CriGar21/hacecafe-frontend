@@ -485,15 +485,26 @@ function Usuarios({ tema }) {
   const [mostrando, setMostrando] = useState("lista");
   const [usuarioEditar, setUsuarioEditar] = useState(null);
   const [form, setForm] = useState({ nombre: "", email: "", password: "", rol: "EMPLEADO" });
-  const ROLES = { DUEÑO: "Dueño", EMPLEADO: "Empleado", COCINA: "Cocina" };
+  const ROLES = { DUENO: "Dueño", "DUEÑO": "Dueño", EMPLEADO: "Empleado", COCINA: "Cocina" };
 
   const cargar = useCallback(() => { api.get("/admin/usuarios").then((r) => setUsuarios(r.data)); }, []);
   useEffect(() => { cargar(); }, [cargar]);
 
-  const crear = async () => { try { await api.post("/admin/usuarios", form); cargar(); setMostrando("lista"); setForm({ nombre: "", email: "", password: "", rol: "EMPLEADO" }); } catch (e) { alert(e.response?.data?.error || "Error al crear usuario"); } };
-  const editar = async () => { try { const body = { nombre: form.nombre, rol: form.rol }; if (form.password) body.password = form.password; await api.put(`/admin/usuarios/${usuarioEditar.id}`, body); cargar(); setMostrando("lista"); setUsuarioEditar(null); } catch (e) { alert(e.response?.data?.error || "Error al editar usuario"); } };
+  const crear = async () => {
+    if (!form.nombre.trim() || !form.email.trim() || !form.password) { alert("Completá nombre, email y contraseña."); return; }
+    try {
+      await api.post("/admin/usuarios", { ...form, nombre: form.nombre.trim(), email: form.email.trim(), rol: form.rol === "DUEÑO" ? "DUENO" : form.rol });
+      cargar(); setMostrando("lista"); setForm({ nombre: "", email: "", password: "", rol: "EMPLEADO" });
+    } catch (e) { alert(e.response?.data?.error || "Error al crear usuario"); }
+  };
+  const editar = async () => { try { const body = { nombre: form.nombre, rol: form.rol === "DUEÑO" ? "DUENO" : form.rol }; if (form.password) body.password = form.password; await api.put(`/admin/usuarios/${usuarioEditar.id}`, body); cargar(); setMostrando("lista"); setUsuarioEditar(null); } catch (e) { alert(e.response?.data?.error || "Error al editar usuario"); } };
   const abrirEditar = (u) => { setForm({ nombre: u.nombre, email: u.email, password: "", rol: u.rol }); setUsuarioEditar(u); setMostrando("editar"); };
-  const toggle = async (id) => { await api.patch(`/admin/usuarios/${id}/toggle`); cargar(); };
+  const toggle = async (id) => { try { await api.patch(`/admin/usuarios/${id}/toggle`); cargar(); } catch (e) { alert(e.response?.data?.error || "Error al actualizar usuario"); } };
+  const borrar = async (u) => {
+    if (!window.confirm(`¿Eliminar a ${u.nombre}? Esta acción no se puede deshacer.`)) return;
+    try { await api.delete(`/admin/usuarios/${u.id}`); cargar(); }
+    catch (e) { alert(e.response?.data?.error || "Error al eliminar usuario"); }
+  };
 
   if (mostrando === "nuevo" || mostrando === "editar") {
     return (
@@ -504,7 +515,7 @@ function Usuarios({ tema }) {
             <div style={s.formGrupo}><label style={s.formLabel}>Nombre completo</label><input style={s.formInput} value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))} /></div>
             <div style={s.formGrupo}><label style={s.formLabel}>Email {mostrando==="editar"&&"(no editable)"}</label><input style={{ ...s.formInput, opacity: mostrando==="editar"?0.5:1 }} value={form.email} disabled={mostrando==="editar"} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} /></div>
             <div style={s.formGrupo}><label style={s.formLabel}>{mostrando==="editar"?"Nueva contraseña (opcional)":"Contraseña"}</label><input style={s.formInput} type="password" value={form.password} placeholder={mostrando==="editar"?"Dejá vacío para no cambiar":""} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} /></div>
-            <div style={s.formGrupo}><label style={s.formLabel}>Rol</label><select style={s.formInput} value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))}><option value="EMPLEADO">Empleado</option><option value="COCINA">Cocina</option><option value="DUEÑO">Dueño</option></select></div>
+            <div style={s.formGrupo}><label style={s.formLabel}>Rol</label><select style={s.formInput} value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))}><option value="EMPLEADO">Empleado</option><option value="COCINA">Cocina</option><option value="DUENO">Dueño</option></select></div>
           </div>
           <button style={s.btnPrimario} onClick={mostrando==="editar"?editar:crear}>{mostrando==="editar"?"Guardar cambios":"Crear usuario"}</button>
         </div>
@@ -523,6 +534,7 @@ function Usuarios({ tema }) {
               <span style={{ ...s.stockPill, background: u.activo?`${tema.verde}25`:"rgba(128,128,128,0.15)", color: u.activo?tema.verde:"#888" }}>{u.activo?"Activo":"Inactivo"}</span>
               <button style={s.btnIcono} onClick={() => abrirEditar(u)}>Editar</button>
               <button style={{ ...s.btnIcono, color: u.activo?tema.alertaText:tema.verde }} onClick={() => toggle(u.id)}>{u.activo?"Desactivar":"Activar"}</button>
+              <button style={{ ...s.btnIcono, color: tema.alertaText }} onClick={() => borrar(u)}>Eliminar</button>
             </div>
           </div>
         ))}
