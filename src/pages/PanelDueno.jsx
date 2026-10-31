@@ -743,6 +743,7 @@ function Caja({ tema }) {
   const [cargando, setCargando] = useState(false);
   const [productos, setProductos] = useState([]);
   const [ticketAbierto, setTicketAbierto] = useState(null);
+  const [busquedaTicket, setBusquedaTicket] = useState("");
   const [razonSocial] = useState({ nombre: localStorage.getItem("rs_nombre")||"HaceCafe", subtitulo: localStorage.getItem("rs_subtitulo")||"Cafetería & Cocina Artesanal", direccion: localStorage.getItem("rs_direccion")||"", telefono: localStorage.getItem("rs_telefono")||"", cuit: localStorage.getItem("rs_cuit")||"" });
   const [desde, setDesde] = useState(hoy);
   const [hasta, setHasta] = useState(hoy);
@@ -759,6 +760,7 @@ function Caja({ tema }) {
   }, [filtrosActivos]);
 
   const buscar = () => setFiltrosActivos({ desde, hasta, productoId });
+  const pedidosFiltrados = (data?.pedidos || []).filter((pedido) => !busquedaTicket.trim() || String(pedido.numero || "").toLowerCase().includes(busquedaTicket.trim().toLowerCase()) || String(pedido.mesa || "").toLowerCase().includes(busquedaTicket.trim().toLowerCase()));
   useEffect(() => { api.get("/admin/productos").then((r) => setProductos(r.data)); }, []);
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -791,6 +793,11 @@ function Caja({ tema }) {
       {cargando && <div style={s.cargando}>Cargando caja...</div>}
       {data && !cargando && (
         <>
+          <div style={s.card}>
+            <h3 style={s.cardTitulo}>Buscar tickets para reimprimir</h3>
+            <input type="search" value={busquedaTicket} onChange={(e) => setBusquedaTicket(e.target.value)} placeholder="Número de pedido o mesa..." style={s.formInput} />
+            <div style={{ fontSize:"12px", color:tema.textFaded }}>Buscá dentro del período seleccionado y abrí el ticket para volver a imprimirlo.</div>
+          </div>
           <div style={s.kpiGrid}>
             <div style={{ ...s.kpiCard, borderTop:`3px solid ${tema.gold}` }}><div style={s.kpiLabel}>Total del período</div><div style={s.kpiValor}>${data.total.toLocaleString()}</div><div style={s.kpiSub}>{filtrosActivos.desde===filtrosActivos.hasta?"1 día":`${filtrosActivos.desde} → ${filtrosActivos.hasta}`}</div></div>
             <div style={{ ...s.kpiCard, borderTop:`3px solid ${tema.accent}` }}><div style={s.kpiLabel}>Transacciones</div><div style={{ ...s.kpiValor, color:tema.accent }}>{data.cantidad}</div><div style={s.kpiSub}>pedidos cobrados</div></div>
@@ -798,11 +805,11 @@ function Caja({ tema }) {
           </div>
           {data.porMetodoPago?.length>0 && <div style={s.card}><h3 style={s.cardTitulo}>Por método de pago</h3>{data.porMetodoPago.map((m,i) => <div key={i} style={s.rankRow}><div style={{ ...s.rankIndicador, background:m.metodo==="EFECTIVO"?tema.verde:m.metodo==="QR"?tema.accent:tema.gold }} /><span style={s.rankNombre}>{m.metodo}</span><span style={s.rankCantidad}>{m.pedidos} pedidos</span><span style={s.rankTotal}>${m.total.toLocaleString()}</span></div>)}</div>}
           {data.porVendedor?.length>0 && <div style={s.card}><h3 style={s.cardTitulo}>Ventas por empleado</h3>{data.porVendedor.sort((a,b)=>b.total-a.total).map((v,i) => <div key={i} style={s.rankRow}><div style={{ ...s.rankIndicador, background:i===0?tema.gold:tema.textFaded }} /><span style={s.rankNombre}>{v.nombre}</span><span style={s.rankCantidad}>{v.pedidos} pedidos</span><span style={s.rankTotal}>${v.total.toLocaleString()}</span></div>)}</div>}
-          {data.pedidos.length===0 ? <div style={s.vacio}>Sin ventas para este período</div> : (
+          {pedidosFiltrados.length===0 ? <div style={s.vacio}>{busquedaTicket.trim() ? "No se encontraron tickets con esa búsqueda" : "Sin ventas para este período"}</div> : (
             <div style={s.card}>
-              <h3 style={s.cardTitulo}>Detalle de pedidos ({data.pedidos.length})</h3>
+              <h3 style={s.cardTitulo}>Tickets encontrados ({pedidosFiltrados.length})</h3>
               {ticketAbierto && <Ticket pedido={ticketAbierto} razonSocial={razonSocial} onCerrar={() => setTicketAbierto(null)} />}
-              {data.pedidos.map((pedido) => (
+              {pedidosFiltrados.map((pedido) => (
                 <div key={pedido.id} style={{ ...s.cajaRow, flexDirection:"column", alignItems:"flex-start", gap:"6px" }}>
                   <div style={{ display:"flex", width:"100%", alignItems:"center", justifyContent:"space-between" }}>
                     <div style={s.cajaInfo}><span style={s.cajaNombre}>Pedido #{pedido.numero}</span><span style={s.cajaSub}>{new Date(pedido.actualizadoEn).toLocaleDateString("es-AR")} {new Date(pedido.actualizadoEn).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})}{pedido.mesa?` · Mesa ${pedido.mesa}`:""}{pedido.usuario?` · ${pedido.usuario.nombre}`:""}</span></div>
@@ -931,7 +938,7 @@ function QRMesas({ tema }) {
             <div style={{ fontSize:"11px", fontWeight:"700", color:tema.textFaded, letterSpacing:"1.5px", textTransform:"uppercase" }}>{nombreLocal}</div>
             <div style={{ fontSize:"1.5rem", fontWeight:"900", color:tema.gold, fontFamily:"Georgia, serif" }}>Mesa {n}</div>
             <div style={{ width:"40px", height:"2px", background:tema.gold, borderRadius:"2px" }} />
-            <div style={{ background: "#fff", borderRadius: "10px", padding: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}><QRCodeSVG id={`qr-mesa-${n}`} value={`${dominio.replace(/\/+$/, "")}/menu?mesa=${n}`} size={220} bgColor="#ffffff" fgColor="#111111" level="H" includeMargin /></div>
+            <div style={{ background: "#fff", borderRadius: "10px", padding: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}><QRCodeSVG id={`qr-mesa-${n}`} value={`${dominio.replace(/\/+$/, "")}/menu?mesa=${n}`} size={220} bgColor="#ffffff" fgColor="#111111" level="M" includeMargin /></div>
             <div style={{ fontSize:"11px", color:tema.textFaded }}>Escaneá para pedir</div>
             <div style={{ display:"flex", gap:"8px", width:"100%" }}>
               <button style={{ flex:1, ...s.btnSecundario, fontSize:"12px", padding:"8px 4px" }} onClick={() => descargarSVG(n)}>↓ SVG</button>
