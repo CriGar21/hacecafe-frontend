@@ -28,8 +28,13 @@ function aplicarMarcaQR() {
     const mesa = match?.[1];
     if (!mesa) return;
 
-    // Los QR de mesa deben permanecer completamente limpios, sin logos superpuestos.
-    card.querySelectorAll(".hc-qr-real-logo").forEach((badge) => badge.remove());
+    // El contenedor del QR solo puede contener el SVG: eliminar cualquier logo, badge o imagen superpuesta.
+    Array.from(card.children).forEach((child) => { if (child !== svg) child.remove(); });
+    card.querySelectorAll(".hc-qr-real-logo, img, canvas, iframe").forEach((node) => node.remove());
+    card.style.position = "static";
+    card.style.overflow = "visible";
+    svg.style.position = "static";
+    svg.style.zIndex = "auto";
 
     const url = `${base}/menu?mesa=${encodeURIComponent(mesa)}`;
     let test = card.parentElement?.querySelector(`.hc-qr-test[data-mesa="${mesa}"]`);
