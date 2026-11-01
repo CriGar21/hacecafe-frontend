@@ -911,6 +911,18 @@ function QRMesas({ tema }) {
 
   const cambiarCantidad = (n) => { const val = Math.max(1,Math.min(99,n)); setCantidadMesas(val); localStorage.setItem("rs_mesas",String(val)); };
   const mesas = Array.from({ length: cantidadMesas },(_,i)=>i+1);
+  useEffect(() => {
+    const limpiarQR = () => document.querySelectorAll('svg[id^="qr-mesa-"]').forEach((svg) => {
+      const contenedor = svg.parentElement;
+      if (!contenedor) return;
+      Array.from(contenedor.children).forEach((hijo) => { if (hijo !== svg) hijo.remove(); });
+      contenedor.querySelectorAll("img, canvas, .hc-qr-real-logo, [class*=qr-logo], [class*=qr-badge]").forEach((nodo) => nodo.remove());
+    });
+    limpiarQR();
+    const observer = new MutationObserver(limpiarQR);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [cantidadMesas]);
 
   const descargarSVG = (nMesa) => { const svg = document.getElementById(`qr-mesa-${nMesa}`); if (!svg) return; const blob = new Blob([new XMLSerializer().serializeToString(svg)],{type:"image/svg+xml"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href=url; a.download=`qr-mesa-${nMesa}.svg`; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); };
   const imprimirUna = (nMesa) => { const w = window.open("","_blank"); w.document.write(`<html><head><title>QR Mesa ${nMesa} — ${nombreLocal}</title><style>body{font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff}.card{border:3px solid #333;border-radius:16px;padding:32px;text-align:center;width:280px}.local{font-size:12px;color:#888;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px}.mesa{font-size:32px;font-weight:900;color:#1a1a1a;margin-bottom:10px}.sep{width:50px;height:2px;background:#C8913A;margin:0 auto 16px}.inst{font-size:12px;color:#888;margin-top:14px}@media print{@page{margin:5mm}}</style></head><body><div class="card"><div class="local">${nombreLocal}</div><div class="mesa">Mesa ${nMesa}</div><div class="sep"></div><div id="qr"></div><div class="inst">Escaneá para hacer tu pedido</div></div><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script><script>new QRCode(document.getElementById('qr'),{text:'${dominio}/menu?mesa=${nMesa}',width:240,height:240,colorDark:'#1a1a1a',colorLight:'#fff'});setTimeout(()=>window.print(),600)</script></body></html>`); w.document.close(); };
