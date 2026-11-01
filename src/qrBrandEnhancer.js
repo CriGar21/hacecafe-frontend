@@ -28,17 +28,8 @@ function aplicarMarcaQR() {
     const mesa = match?.[1];
     if (!mesa) return;
 
-    if (logoUrl) {
-      let badge = card.querySelector(".hc-qr-real-logo");
-      if (!badge) {
-        badge = document.createElement("span");
-        badge.className = "hc-qr-real-logo";
-        badge.setAttribute("aria-hidden", "true");
-        card.appendChild(badge);
-      }
-      badge.style.backgroundImage = `url(${JSON.stringify(logoUrl)})`;
-      badge.title = "Logo del local";
-    }
+    // Los QR de mesa deben permanecer completamente limpios, sin logos superpuestos.
+    card.querySelectorAll(".hc-qr-real-logo").forEach((badge) => badge.remove());
 
     const url = `${base}/menu?mesa=${encodeURIComponent(mesa)}`;
     let test = card.parentElement?.querySelector(`.hc-qr-test[data-mesa="${mesa}"]`);
